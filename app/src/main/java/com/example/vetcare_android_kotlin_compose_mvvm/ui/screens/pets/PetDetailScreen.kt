@@ -386,7 +386,7 @@ private fun MetricCard(
     modifier: Modifier = Modifier
 ) {
     SoftCard(
-        modifier = modifier.width(120.dp),
+        modifier = modifier.widthIn(min = 140.dp),
         containerColor = color.copy(alpha = 0.1f)
     ) {
         Column(
@@ -403,12 +403,14 @@ private fun MetricCard(
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleSmall,
-                color = VetCareColors.OnSurface
+                color = VetCareColors.OnSurface,
+                maxLines = 1
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = VetCareColors.MutedText
+                color = VetCareColors.MutedText,
+                maxLines = 1
             )
         }
     }
