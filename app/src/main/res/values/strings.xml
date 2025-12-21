@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">VetCare</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">Para la salud y\ncuidado de tu mascota</string>
+    <string name="onboarding_subtitle">VetCare es la forma revolucionaria\nde asegurar que tu mascota reciba\nla mejor atención veterinaria.</string>
+    <string name="onboarding_continue">Continuar</string>
+
+    <!-- Login -->
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_subtitle">Ingresa a tu cuenta VetCare</string>
+    <string name="login_email">Correo electrónico</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_button">Iniciar Sesión</string>
+    <string name="login_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="login_error_invalid">Credenciales inválidas</string>
+    <string name="login_email_required">El correo es requerido</string>
+    <string name="login_email_invalid">Formato de correo inválido</string>
+    <string name="login_password_required">La contraseña es requerida</string>
+    <string name="login_password_min_length">La contraseña debe tener al menos 6 caracteres</string>
+
+    <!-- Reset Password -->
+    <string name="reset_title">Recuperar Contraseña</string>
+    <string name="reset_subtitle">Ingresa tu correo y te enviaremos una contraseña temporal</string>
+    <string name="reset_button">Enviar</string>
+    <string name="reset_success_title">¡Contraseña enviada!</string>
+    <string name="reset_success_message">Tu contraseña temporal es:</string>
+    <string name="reset_back_to_login">Volver al inicio de sesión</string>
+    <string name="reset_email_not_found">No existe una cuenta con ese correo</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_pets">Mascotas</string>
+    <string name="nav_appointments">Citas</string>
+    <string name="nav_staff">Staff</string>
+    <string name="nav_discover">Descubrir</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Admin Home -->
+    <string name="admin_dashboard_title">Panel de Control</string>
+    <string name="admin_welcome">¡Bienvenido, Admin!</string>
+    <string name="admin_total_pets">Mascotas</string>
+    <string name="admin_total_owners">Dueños</string>
+    <string name="admin_today_appointments">Citas Hoy</string>
+    <string name="admin_pending_vaccines">Vacunas Pendientes</string>
+    <string name="admin_quick_actions">Acciones Rápidas</string>
+    <string name="admin_add_pet">Nueva Mascota</string>
+    <string name="admin_add_appointment">Nueva Cita</string>
+    <string name="admin_upcoming_appointments">Próximas Citas</string>
+    <string name="admin_view_all">Ver todo</string>
+    <string name="admin_activity_log">Registro de Actividad</string>
+
+    <!-- Owner Home -->
+    <string name="owner_home_title">Petcare</string>
+    <string name="owner_find_vets">Encuentra Veterinarios\nCercanos para tu\nMascota</string>
+    <string name="owner_services">Servicios</string>
+    <string name="owner_service_veterinary">Veterinaria</string>
+    <string name="owner_service_grooming">Estética</string>
+    <string name="owner_service_vaccines">Vacunas</string>
+    <string name="owner_service_food">Alimentos</string>
+    <string name="owner_my_pets">Mis Mascotas</string>
+    <string name="owner_see_all">Ver todas</string>
+    <string name="owner_upcoming_appointments">Próximas Citas</string>
+    <string name="owner_no_pets">No tienes mascotas registradas</string>
+    <string name="owner_add_pet">Agregar Mascota</string>
+
+    <!-- Pets -->
+    <string name="pets_title">Mascotas</string>
+    <string name="pets_search">Buscar mascota…</string>
+    <string name="pets_filter_all">Todas</string>
+    <string name="pets_empty">No hay mascotas registradas</string>
+    <string name="pets_add">Nueva Mascota</string>
+    <string name="pet_detail_title">Perfil de Mascota</string>
+    <string name="pet_weight">Peso</string>
+    <string name="pet_age">Edad</string>
+    <string name="pet_years">años</string>
+    <string name="pet_vaccines">Vacunas</string>
+    <string name="pet_next_vaccine">Próxima Vacuna</string>
+    <string name="pet_medical_history">Historial Médico</string>
+    <string name="pet_no_consultations">Sin consultas registradas</string>
+    <string name="pet_add_consultation">Nueva Consulta</string>
+    <string name="pet_add_appointment">Agendar Cita</string>
+    <string name="pet_add_vaccine">Registrar Vacuna</string>
+
+    <!-- Pet Form -->
+    <string name="pet_form_new">Nueva Mascota</string>
+    <string name="pet_form_edit">Editar Mascota</string>
+    <string name="pet_form_basic_info">Información Básica</string>
+    <string name="pet_form_name">Nombre *</string>
+    <string name="pet_form_species">Especie</string>
+    <string name="pet_form_breed">Raza (opcional)</string>
+    <string name="pet_form_age">Edad (años) *</string>
+    <string name="pet_form_weight">Peso (kg)</string>
+    <string name="pet_form_owner">Dueño</string>
+    <string name="pet_form_select_owner">Seleccionar dueño *</string>
+    <string name="pet_form_notes">Notas Adicionales</string>
+    <string name="pet_form_notes_hint">Notas (opcional)</string>
+    <string name="pet_form_save">Guardar Cambios</string>
+    <string name="pet_form_create">Crear Mascota</string>
+    <string name="pet_form_cancel">Cancelar</string>
+    <string name="pet_form_name_error">El nombre es requerido</string>
+    <string name="pet_form_age_error">Ingresa una edad válida (0–30)</string>
+    <string name="pet_form_owner_error">Selecciona un dueño</string>
+
+    <!-- Appointments -->
+    <string name="appointments_title_admin">Gestión de Citas</string>
+    <string name="appointments_title_owner">Mis Citas</string>
+    <string name="appointments_filter_all">Todas</string>
+    <string name="appointments_filter_upcoming">Próximas</string>
+    <string name="appointments_filter_today">Hoy</string>
+    <string name="appointments_filter_completed">Completadas</string>
+    <string name="appointments_filter_cancelled">Canceladas</string>
+    <string name="appointments_empty_upcoming">No hay citas próximas</string>
+    <string name="appointments_empty_today">No hay citas para hoy</string>
+    <string name="appointments_empty_completed">No hay citas completadas</string>
+    <string name="appointments_empty_cancelled">No hay citas canceladas</string>
+    <string name="appointments_empty_all">No hay citas registradas</string>
+    <string name="appointments_add">Nueva Cita</string>
+    <string name="appointments_count">%d citas</string>
+    <string name="appointments_count_single">%d cita</string>
+
+    <!-- Appointment Form -->
+    <string name="appointment_form_new">Nueva Cita</string>
+    <string name="appointment_form_edit">Editar Cita</string>
+    <string name="appointment_form_pet">Mascota</string>
+    <string name="appointment_form_select_pet">Seleccionar mascota *</string>
+    <string name="appointment_form_vet">Veterinario</string>
+    <string name="appointment_form_select_vet">Seleccionar veterinario *</string>
+    <string name="appointment_form_datetime">Fecha y Hora</string>
+    <string name="appointment_form_date">Fecha</string>
+    <string name="appointment_form_time">Hora</string>
+    <string name="appointment_form_change_date">Cambiar fecha</string>
+    <string name="appointment_form_change_time">Cambiar hora</string>
+    <string name="appointment_form_details">Detalles</string>
+    <string name="appointment_form_reason">Motivo de la cita *</string>
+    <string name="appointment_form_notes">Notas adicionales (opcional)</string>
+    <string name="appointment_form_save">Guardar Cambios</string>
+    <string name="appointment_form_create">Crear Cita</string>
+    <string name="appointment_form_cancel">Cancelar</string>
+
+    <!-- Appointment Status -->
+    <string name="status_scheduled">Agendada</string>
+    <string name="status_confirmed">Confirmada</string>
+    <string name="status_in_progress">En Progreso</string>
+    <string name="status_completed">Completada</string>
+    <string name="status_cancelled">Cancelada</string>
+    <string name="status_no_show">No Asistió</string>
+
+    <!-- Veterinarians -->
+    <string name="vets_title">Staff Veterinario</string>
+    <string name="vets_search">Buscar veterinario…</string>
+    <string name="vets_count">%d veterinarios</string>
+    <string name="vets_empty">No se encontraron veterinarios</string>
+    <string name="vets_today">Hoy</string>
+    <string name="vets_total">Total</string>
+    <string name="vets_upcoming_appointments">Próximas citas</string>
+
+    <!-- Consultation Form -->
+    <string name="consultation_form_new">Nueva Consulta</string>
+    <string name="consultation_form_edit">Editar Consulta</string>
+    <string name="consultation_form_patient">Paciente</string>
+    <string name="consultation_form_vet">Veterinario</string>
+    <string name="consultation_form_select_vet">Seleccionar veterinario *</string>
+    <string name="consultation_form_diagnosis">Diagnóstico</string>
+    <string name="consultation_form_diagnosis_hint">Diagnóstico *</string>
+    <string name="consultation_form_treatment">Tratamiento</string>
+    <string name="consultation_form_treatment_hint">Tratamiento indicado *</string>
+    <string name="consultation_form_notes">Notas Adicionales</string>
+    <string name="consultation_form_notes_hint">Notas (opcional)</string>
+    <string name="consultation_form_save">Guardar Cambios</string>
+    <string name="consultation_form_create">Registrar Consulta</string>
+    <string name="consultation_form_cancel">Cancelar</string>
+
+    <!-- Vaccine Form -->
+    <string name="vaccine_form_new">Nueva Vacuna</string>
+    <string name="vaccine_form_edit">Editar Vacuna</string>
+    <string name="vaccine_form_patient">Paciente</string>
+    <string name="vaccine_form_vaccine">Vacuna</string>
+    <string name="vaccine_form_common">Vacunas comunes:</string>
+    <string name="vaccine_form_name">Nombre de vacuna *</string>
+    <string name="vaccine_form_dates">Fechas</string>
+    <string name="vaccine_form_last_date">Última aplicación</string>
+    <string name="vaccine_form_next_date">Próxima aplicación</string>
+    <string name="vaccine_form_change_last">Cambiar fecha de aplicación</string>
+    <string name="vaccine_form_change_next">Cambiar próxima fecha</string>
+    <string name="vaccine_form_notes">Notas</string>
+    <string name="vaccine_form_notes_hint">Notas (opcional)</string>
+    <string name="vaccine_form_save">Guardar Cambios</string>
+    <string name="vaccine_form_create">Registrar Vacuna</string>
+    <string name="vaccine_form_cancel">Cancelar</string>
+
+    <!-- Discover -->
+    <string name="discover_title">Descubrir</string>
+    <string name="discover_subtitle">Tips y contenido para el cuidado de tu mascota</string>
+    <string name="discover_you">Tú</string>
+    <string name="discover_all">Todos</string>
+    <string name="discover_category_tip">Tip</string>
+    <string name="discover_category_nutrition">Nutrición</string>
+    <string name="discover_category_health">Salud</string>
+    <string name="discover_category_grooming">Estética</string>
+    <string name="discover_category_fun">Diversión</string>
+
+    <!-- Activity Log -->
+    <string name="activity_title">Registro de Actividad</string>
+    <string name="activity_events">%d eventos</string>
+    <string name="activity_filter_screen">Pantalla</string>
+    <string name="activity_filter_action">Acción</string>
+    <string name="activity_filter_all">Todas</string>
+    <string name="activity_filter_clear">Limpiar</string>
+    <string name="activity_empty">No hay eventos registrados</string>
+    <string name="activity_unknown_user">Usuario desconocido</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_account">Cuenta</string>
+    <string name="settings_profile">Mi Perfil</string>
+    <string name="settings_notifications">Notificaciones</string>
+    <string name="settings_app">Aplicación</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_language_es">Español (Chile)</string>
+    <string name="settings_about">Acerca de VetCare</string>
+    <string name="settings_version">Versión 1.0.0</string>
+    <string name="settings_logout">Cerrar Sesión</string>
+    <string name="settings_logout_confirm_title">¿Cerrar sesión?</string>
+    <string name="settings_logout_confirm_message">¿Estás seguro de que deseas cerrar sesión?</string>
+    <string name="settings_logout_confirm_yes">Sí, cerrar sesión</string>
+    <string name="settings_logout_confirm_no">Cancelar</string>
+
+    <!-- Common -->
+    <string name="common_back">Volver</string>
+    <string name="common_save">Guardar</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_delete">Eliminar</string>
+    <string name="common_edit">Editar</string>
+    <string name="common_ok">Aceptar</string>
+    <string name="common_error">Error</string>
+    <string name="common_loading">Cargando…</string>
+    <string name="common_search">Buscar</string>
+    <string name="common_clear">Limpiar</string>
+    <string name="common_notifications">Notificaciones</string>
+    <string name="common_owner">Dueño</string>
+    <string name="common_pet">Mascota</string>
+    <string name="common_no_assigned">Sin asignar</string>
+
+    <!-- Delete Confirmation -->
+    <string name="delete_pet_title">Eliminar mascota</string>
+    <string name="delete_pet_message">¿Estás seguro de que deseas eliminar a %s? Esta acción no se puede deshacer.</string>
+    <string name="delete_confirm">Eliminar</string>
+    <string name="delete_cancel">Cancelar</string>
+
+    <!-- Date Format -->
+    <string name="date_format_short">dd MMM</string>
+    <string name="date_format_full">dd/MM/yyyy</string>
+    <string name="time_format">HH:mm</string>
+    <string name="datetime_format">dd MMM, HH:mm</string>
+
+    <!-- Placeholder -->
+    <string name="placeholder_na">N/A</string>
+    <string name="placeholder_no_breed">Sin raza</string>
+    <string name="placeholder_general_medicine">Medicina General</string>
+</resources>
+
