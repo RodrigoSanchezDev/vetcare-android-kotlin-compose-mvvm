@@ -161,6 +161,7 @@ private fun BottomNavItemView(
 
     val iconColor by animateColorAsState(
         targetValue = if (isSelected) VetCareColors.Accent else VetCareColors.BottomBarItemInactive,
+        animationSpec = spring(),
         label = "iconColor"
     )
 

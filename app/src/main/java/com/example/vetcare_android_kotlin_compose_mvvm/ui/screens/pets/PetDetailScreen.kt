@@ -32,6 +32,7 @@ import java.time.temporal.ChronoUnit
 
 /**
  * Pantalla de detalle de mascota estilo perfil premium
+ * Incluye TabRow con 3 tabs: Info, Historial, Vacunas
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +48,10 @@ fun PetDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isAdmin = SessionManager.isAdmin()
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Estado para los tabs
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("Info", "Historial", "Vacunas")
 
     LaunchedEffect(petId) {
         viewModel.loadPet(petId)

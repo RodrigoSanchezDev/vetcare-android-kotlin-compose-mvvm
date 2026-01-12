@@ -11,12 +11,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.theme.*
 
 /**
  * Card premium de VetCare (radius 28dp, sombra sutil)
+ * Soporta accesibilidad con merge de contenido descendiente
  */
 @Composable
 fun PremiumCard(
@@ -24,15 +29,24 @@ fun PremiumCard(
     containerColor: Color = VetCareColors.Surface,
     contentPadding: PaddingValues = PaddingValues(VetCareSpacing.md),
     elevation: Dp = VetCareElevation.medium,
+    accessibilityLabel: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
-        modifier = modifier.shadow(
-            elevation = elevation,
-            shape = RoundedCornerShape(VetCareShapeTokens.CardRadius),
-            ambientColor = Color.Black.copy(alpha = 0.08f),
-            spotColor = Color.Black.copy(alpha = 0.08f)
-        ),
+        modifier = modifier
+            .shadow(
+                elevation = elevation,
+                shape = RoundedCornerShape(VetCareShapeTokens.CardRadius),
+                ambientColor = Color.Black.copy(alpha = 0.08f),
+                spotColor = Color.Black.copy(alpha = 0.08f)
+            )
+            .then(
+                if (accessibilityLabel != null) {
+                    Modifier.semantics(mergeDescendants = true) {
+                        contentDescription = accessibilityLabel
+                    }
+                } else Modifier
+            ),
         shape = RoundedCornerShape(VetCareShapeTokens.CardRadius),
         colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
@@ -52,6 +66,7 @@ fun PremiumCard(
 
 /**
  * Card suave de VetCare (radius 18dp, surfaceVariant)
+ * Soporta accesibilidad con descripción personalizada
  */
 @Composable
 fun SoftCard(
@@ -59,12 +74,20 @@ fun SoftCard(
     containerColor: Color = VetCareColors.SurfaceVariant,
     contentPadding: PaddingValues = PaddingValues(VetCareSpacing.sm),
     onClick: (() -> Unit)? = null,
+    accessibilityLabel: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val accessibilityModifier = if (accessibilityLabel != null) {
+        Modifier.semantics(mergeDescendants = true) {
+            contentDescription = accessibilityLabel
+            if (onClick != null) role = Role.Button
+        }
+    } else Modifier
+
     if (onClick != null) {
         Card(
             onClick = onClick,
-            modifier = modifier,
+            modifier = modifier.then(accessibilityModifier),
             shape = RoundedCornerShape(VetCareShapeTokens.ChipRadius),
             colors = CardDefaults.cardColors(containerColor = containerColor)
         ) {
@@ -75,7 +98,7 @@ fun SoftCard(
         }
     } else {
         Card(
-            modifier = modifier,
+            modifier = modifier.then(accessibilityModifier),
             shape = RoundedCornerShape(VetCareShapeTokens.ChipRadius),
             colors = CardDefaults.cardColors(containerColor = containerColor)
         ) {
@@ -89,6 +112,7 @@ fun SoftCard(
 
 /**
  * Card de servicio con icono y label
+ * Incluye accesibilidad con descripción del servicio
  */
 @Composable
 fun ServiceTile(
@@ -96,11 +120,15 @@ fun ServiceTile(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    containerColor: Color = VetCareColors.Surface
+    containerColor: Color = VetCareColors.Surface,
+    accessibilityHint: String? = null
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.semantics(mergeDescendants = true) {
+            contentDescription = accessibilityHint ?: "Ir a $label"
+            role = Role.Button
+        },
         shape = RoundedCornerShape(VetCareShapeTokens.ServiceTileRadius),
         colors = CardDefaults.cardColors(containerColor = containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = VetCareElevation.low)
@@ -129,6 +157,7 @@ fun ServiceTile(
 
 /**
  * Card de métrica pequeña (peso, vacunas, etc.)
+ * Incluye accesibilidad con descripción completa de la métrica
  */
 @Composable
 fun MetricChipCard(
@@ -141,7 +170,8 @@ fun MetricChipCard(
     SoftCard(
         modifier = modifier,
         containerColor = containerColor,
-        contentPadding = PaddingValues(VetCareSpacing.sm)
+        contentPadding = PaddingValues(VetCareSpacing.sm),
+        accessibilityLabel = "$label: $value"
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

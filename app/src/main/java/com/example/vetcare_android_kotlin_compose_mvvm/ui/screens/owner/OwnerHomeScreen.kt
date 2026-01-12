@@ -60,10 +60,11 @@ fun OwnerHomeScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(VetCareColors.Background)
+            .background(VetCareColors.Background),
+        contentPadding = PaddingValues(top = VetCareSpacing.md, bottom = VetCareSpacing.xl)
     ) {
         // Header con saludo y settings
-        item {
+        item(key = "header") {
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn() + slideInVertically { -50 }
@@ -98,7 +99,7 @@ fun OwnerHomeScreen(
         }
 
         // Banner principal - Find Veterinarians
-        item {
+        item(key = "banner") {
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn() + slideInVertically { -30 }
@@ -110,7 +111,7 @@ fun OwnerHomeScreen(
                         .height(140.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = VetCareColors.OnSurface
+                        containerColor = VetCareColors.Primary
                     )
                 ) {
                     Row(
@@ -129,7 +130,7 @@ fun OwnerHomeScreen(
                                     fontWeight = FontWeight.Bold,
                                     lineHeight = 22.sp
                                 ),
-                                color = Color.White
+                                color = VetCareColors.OnPrimary
                             )
                         }
 
@@ -137,13 +138,13 @@ fun OwnerHomeScreen(
                             modifier = Modifier
                                 .size(80.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(VetCareColors.Primary.copy(alpha = 0.3f)),
+                                .background(Color.White.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = VetCareColors.OnPrimary,
                                 modifier = Modifier.size(40.dp)
                             )
                         }
@@ -153,7 +154,7 @@ fun OwnerHomeScreen(
         }
 
         // Sección Services
-        item {
+        item(key = "services") {
             Column(
                 modifier = Modifier.padding(
                     horizontal = VetCareSpacing.md,
@@ -216,7 +217,7 @@ fun OwnerHomeScreen(
         }
 
         // Mis Mascotas
-        item {
+        item(key = "my_pets_header") {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -237,7 +238,7 @@ fun OwnerHomeScreen(
             }
         }
 
-        item {
+        item(key = "my_pets_list") {
             if (myPets.isEmpty()) {
                 EmptyPetsCard(onAddPet = onNavigateToPets)
             } else {
@@ -294,10 +295,28 @@ private fun ServiceCardCompact(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Determinar si estamos en modo oscuro para ajustar colores
+    val colors = LocalVetCareColors.current
+    val isDark = colors.isDark
+
+    // En modo oscuro, usar colores más oscuros para el fondo
+    val cardBackground = if (isDark) {
+        backgroundColor.copy(alpha = 0.15f) // Más sutil en modo oscuro
+    } else {
+        backgroundColor
+    }
+
+    // Color del texto e icono que contraste con el fondo
+    val contentColor = if (isDark) {
+        backgroundColor // Usar el color como acento en modo oscuro
+    } else {
+        Color(0xFF424242) // Gris oscuro en modo claro
+    }
+
     Card(
         modifier = modifier.height(90.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        colors = CardDefaults.cardColors(containerColor = cardBackground),
         onClick = onClick
     ) {
         Column(
@@ -310,14 +329,14 @@ private fun ServiceCardCompact(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = VetCareColors.OnSurface.copy(alpha = 0.8f),
+                tint = contentColor,
                 modifier = Modifier.size(28.dp)
             )
             Spacer(modifier = Modifier.height(VetCareSpacing.xs))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
-                color = VetCareColors.OnSurface
+                color = if (isDark) colors.onBackground else contentColor
             )
         }
     }

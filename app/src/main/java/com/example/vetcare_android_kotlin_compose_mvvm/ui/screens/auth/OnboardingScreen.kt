@@ -1,6 +1,7 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.auth
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -15,6 +16,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,12 +48,6 @@ fun OnboardingScreen(
         label = "scaleAnim"
     )
 
-    // Animación de entrada
-    var isVisible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        delay(100)
-        isVisible = true
-    }
 
     Box(
         modifier = Modifier
@@ -86,7 +83,7 @@ fun OnboardingScreen(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Icono principal
+                    // Foto de Max (mascota)
                     Box(
                         modifier = Modifier
                             .size(120.dp)
@@ -94,11 +91,13 @@ fun OnboardingScreen(
                             .background(Color.White.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Pets,
-                            contentDescription = "Pet",
-                            modifier = Modifier.size(72.dp),
-                            tint = Color.White
+                        Image(
+                            painter = painterResource(id = R.drawable.pet_max),
+                            contentDescription = "Max - Mascota",
+                            modifier = Modifier
+                                .size(110.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
                         )
                     }
 

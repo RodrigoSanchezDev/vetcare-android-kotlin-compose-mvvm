@@ -516,7 +516,7 @@ graph TD
 
 <div align="center">
 
-<img src="https://avatars.githubusercontent.com/yourusername" width="120" style="border-radius: 50%;" alt="Rodrigo Sánchez"/>
+<img src="https://avatars.githubusercontent.com/RodrigoSanchezDev" width="120" style="border-radius: 50%;" alt="Rodrigo Sánchez"/>
 
 ### **Rodrigo Sánchez**
 #### Full Stack Developer
@@ -553,7 +553,7 @@ Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE)
 
 <div align="center">
 
-**Desarrollado con ❤️ usando Kotlin & Jetpack Compose**
+**Desarrollado usando Kotlin & Jetpack Compose**
 
 ⭐ Si este proyecto te resultó útil, considera darle una estrella
 
