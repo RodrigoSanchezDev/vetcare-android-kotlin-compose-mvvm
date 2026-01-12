@@ -559,3 +559,55 @@ Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE)
 
 </div>
 
+
+---
+
+## 🤝 Contribuciones
+
+¡Las contribuciones son bienvenidas! Este proyecto está abierto a la comunidad y agradecemos toda ayuda para mejorarlo.
+
+### 🌟 ¿Cómo Contribuir?
+
+1. **Lee la guía**: Revisa [CONTRIBUTING.md](CONTRIBUTING.md) para conocer las normas de contribución
+2. **Encuentra un issue**: Busca issues etiquetados como [`good first issue`](https://github.com/RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+3. **Fork & Branch**: Crea un fork y una rama para tu contribución
+4. **Desarrolla**: Implementa tu mejora siguiendo las convenciones de código
+5. **Testing**: Asegúrate de que todos los tests pasen
+6. **Pull Request**: Envía tu PR con una descripción clara
+
+### 📋 Áreas de Contribución
+
+- 🎨 **UI/UX**: Mejoras visuales, animaciones, Material Design 3
+- 🧪 **Testing**: Tests unitarios, tests de UI, cobertura
+- ♿ **Accesibilidad**: Soporte TalkBack, contraste, navegación
+- ⚡ **Performance**: Optimizaciones, lazy loading, caching
+- 🌍 **i18n**: Traducciones y localización
+- 📱 **Features**: Nuevas funcionalidades para clínicas veterinarias
+- 📚 **Documentación**: Mejoras en docs, tutoriales, ejemplos
+
+### 🎯 Good First Issues
+
+Perfecto para comenzar:
+
+- [#1](https://github.com/RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm/issues/1) 🌙 Agregar soporte para tema oscuro
+- [#2](https://github.com/RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm/issues/2) ♿ Mejorar soporte de TalkBack
+- [#3](https://github.com/RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm/issues/3) ⚡ Optimizar rendimiento de listas
+- [#4](https://github.com/RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm/issues/4) 🧪 Agregar tests unitarios
+- [#5](https://github.com/RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm/issues/5) 🌍 Mejorar traducciones al español
+
+[Ver todos los Good First Issues →](https://github.com/RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+
+### 💬 Código de Conducta
+
+Este proyecto sigue el [Código de Conducta](CODE_OF_CONDUCT.md) de Contributor Covenant. Al participar, aceptas mantener un ambiente respetuoso y acogedor para todos.
+
+### 👥 Colaboradores
+
+Gracias a todas las personas que han contribuido a VetCare:
+
+<a href="https://github.com/RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=RodrigoSanchezDev/vetcare-android-kotlin-compose-mvvm" />
+</a>
+
+---
+
