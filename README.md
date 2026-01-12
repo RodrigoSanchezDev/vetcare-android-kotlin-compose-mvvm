@@ -32,6 +32,7 @@
 - [Configuración](#-configuración)
 - [Demo](#-demo)
 - [Módulos del Sistema](#-módulos-del-sistema)
+- [Accesibilidad y Temas](#-accesibilidad)
 - [Flujo de Usuario](#-flujo-de-usuario)
 - [Roadmap](#-roadmap)
 - [Autor](#-autor)
@@ -67,7 +68,9 @@
 | 🔔 **Notificaciones** | Recordatorios automáticos de citas y vacunas |
 | 📊 **Dashboard Admin** | Métricas en tiempo real, accesos rápidos |
 | 📝 **Registro de Actividad** | Auditoría completa de acciones del sistema |
-| 🎨 **UI/UX Premium** | Material 3, animaciones fluidas, tema personalizado |
+| 🎨 **Temas y Apariencia** | Modo Claro, Oscuro y Automático (según sistema) |
+| ♿ **Accesibilidad** | Alto contraste, reducción de animaciones, TalkBack |
+| 🎯 **UI/UX Premium** | Material 3, animaciones fluidas, diseño adaptativo |
 
 </div>
 
@@ -78,6 +81,8 @@
 ✅ Navegación declarativa con Compose Navigation
 ✅ Notificaciones con WorkManager
 ✅ Animaciones con AnimatedVisibility y animateContentSize
+✅ Sistema de temas dinámico (Claro/Oscuro/Sistema)
+✅ Soporte de accesibilidad (TalkBack, alto contraste)
 ✅ Componentes UI reutilizables
 ✅ Validación de formularios en tiempo real
 ✅ Manejo centralizado de errores
@@ -236,9 +241,10 @@ app/
 │   │   │   │       └── DiscoverScreen.kt
 │   │   │   │
 │   │   │   └── theme/
-│   │   │       ├── Color.kt
-│   │   │       ├── Theme.kt
-│   │   │       └── Typography.kt
+│   │   │       ├── Color.kt                 # Paletas de colores
+│   │   │       ├── Theme.kt                 # Configuración del tema
+│   │   │       ├── ThemeSettings.kt         # Gestión de preferencias (tema, accesibilidad)
+│   │   │       └── Typography.kt            # Tipografía del sistema
 │   │   │
 │   │   └── MainActivity.kt
 │   │
@@ -310,6 +316,17 @@ cd vetcare-android
 
 ## 🎬 Demo
 
+### 🎥 Videos Demostrativos
+
+<div align="center">
+
+| Interfaz Administrador | Interfaz Cliente |
+|:----------------------:|:----------------:|
+| [![Ver Demo Admin](https://img.shields.io/badge/▶%20Ver%20Video-Admin-4285F4?style=for-the-badge&logo=vimeo&logoColor=white)](https://vimeo.com/1153472762) | [![Ver Demo Cliente](https://img.shields.io/badge/▶%20Ver%20Video-Cliente-00C853?style=for-the-badge&logo=vimeo&logoColor=white)](https://vimeo.com/1153473315) |
+| Gestión completa: Dashboard, Mascotas, Citas, Staff y Auditoría | Experiencia del dueño: Mis Mascotas, Citas y Configuración |
+
+</div>
+
 ### Flujo de Administrador
 
 ```
@@ -333,6 +350,18 @@ Login → Mi Dashboard → Mis Mascotas → Mis Citas → Descubrir → Configur
 | Mascotas | Detalle | Citas |
 |:--------:|:-------:|:-----:|
 | ![Pets](docs/screenshots/pets.png) | ![Detail](docs/screenshots/detail.png) | ![Appointments](docs/screenshots/appointments.png) |
+
+</div>
+
+### Temas y Accesibilidad
+
+<div align="center">
+
+| Modo Claro | Modo Oscuro | Configuración |
+|:----------:|:-----------:|:-------------:|
+| Interfaz clara optimizada para uso diurno | Interfaz oscura que reduce fatiga visual | Ajustes de tema y accesibilidad |
+
+*Las opciones de tema y accesibilidad están disponibles en Configuración → Apariencia/Accesibilidad*
 
 </div>
 
@@ -382,6 +411,42 @@ Login → Mi Dashboard → Mis Mascotas → Mis Citas → Descubrir → Configur
 - Implementación con WorkManager
 - Cancelación automática al logout
 
+### 🎨 Sistema de Temas
+
+La aplicación implementa un sistema de temas completo que se adapta a las preferencias del usuario:
+
+| Modo | Descripción |
+|------|-------------|
+| ☀️ **Claro** | Fondo claro con texto oscuro, ideal para uso diurno |
+| 🌙 **Oscuro** | Fondo oscuro que reduce fatiga visual en ambientes con poca luz |
+| 🔄 **Automático** | Se adapta automáticamente según la configuración del sistema |
+
+**Implementación técnica:**
+- Persistencia de preferencias con SharedPreferences
+- Colores dinámicos usando `CompositionLocal`
+- Transición suave entre temas sin reiniciar la app
+- Respeto por la configuración del sistema operativo
+
+### ♿ Accesibilidad
+
+VetCare está diseñado siguiendo las pautas de accesibilidad de Android para garantizar una experiencia inclusiva:
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Alto Contraste** | Modo con colores más intensos para mejor legibilidad |
+| **Reducir Animaciones** | Minimiza el movimiento para usuarios sensibles |
+| **TalkBack Compatible** | `contentDescription` en todos los elementos interactivos |
+| **Áreas Táctiles** | Mínimo 48dp en elementos clickeables |
+| **Jerarquía Visual** | Tipografía diferenciada y espaciado consistente |
+
+**Ratios de contraste implementados:**
+
+| Modo | Background | Text | Ratio WCAG |
+|------|------------|------|------------|
+| Claro | #EEF1F7 | #12131A | 13.5:1 ✅ |
+| Oscuro | #0F1117 | #E8E9ED | 14.2:1 ✅ |
+| Alto Contraste | #FFFFFF | #000000 | 21:1 ✅ |
+
 ### 📊 Registro de Actividad
 
 - Logging centralizado de acciones
@@ -427,6 +492,8 @@ graph TD
 - [x] Notificaciones automáticas
 - [x] Registro de actividad
 - [x] UI/UX Material 3
+- [x] Sistema de temas (Claro/Oscuro/Automático)
+- [x] Accesibilidad (Alto contraste, TalkBack, reducir animaciones)
 
 ### Versión 2.0 🔜
 - [ ] Integración con backend REST
