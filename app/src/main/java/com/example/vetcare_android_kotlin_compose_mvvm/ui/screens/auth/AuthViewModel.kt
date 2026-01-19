@@ -2,10 +2,11 @@ package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.User
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.UserRole
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import com.example.vetcare_android_kotlin_compose_mvvm.data.session.SessionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,8 +36,12 @@ sealed class ResetPasswordUiState {
 
 /**
  * ViewModel para autenticación
+ * Usa VetCareRepository con Room Database para persistencia local
  */
 class AuthViewModel : ViewModel() {
+
+    // Repositorio con persistencia Room (SQLite)
+    private val repository: VetCareRepository = VetCareApplication.getRepository()
 
     private val _loginState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val loginState: StateFlow<AuthUiState> = _loginState.asStateFlow()
@@ -101,6 +106,7 @@ class AuthViewModel : ViewModel() {
 
     /**
      * Intentar login con credenciales
+     * Busca en Room Database (SQLite)
      */
     fun login() {
         if (!validateLoginForm()) return
@@ -111,11 +117,8 @@ class AuthViewModel : ViewModel() {
             // Simular delay de red
             delay(1000)
 
-            // Buscar usuario en el repositorio mock
-            val user = MockDataRepository.users.find {
-                it.email.equals(_email.value, ignoreCase = true) &&
-                it.passwordHash == _password.value
-            }
+            // Buscar usuario en Room Database
+            val user = repository.authenticateUser(_email.value, _password.value)
 
             if (user != null) {
                 SessionManager.login(user)
@@ -152,10 +155,8 @@ class AuthViewModel : ViewModel() {
             // Simular delay de red
             delay(1500)
 
-            // Verificar si el usuario existe
-            val user = MockDataRepository.users.find {
-                it.email.equals(email, ignoreCase = true)
-            }
+            // Verificar si el usuario existe en Room Database
+            val user = repository.findUserByEmail(email)
 
             if (user != null) {
                 // Generar contraseña temporal simulada

@@ -1,12 +1,15 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.veterinarians
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Veterinarian
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Estado UI para formulario de veterinario
@@ -30,8 +33,12 @@ data class VetFormUiState(
 
 /**
  * ViewModel para crear/editar veterinario
+ * Usa VetCareRepository con Room Database para persistencia local
  */
 class VetFormViewModel : ViewModel() {
+
+    // Repositorio con persistencia Room (SQLite)
+    private val repository: VetCareRepository = VetCareApplication.getRepository()
 
     private val _uiState = MutableStateFlow(VetFormUiState())
     val uiState: StateFlow<VetFormUiState> = _uiState.asStateFlow()
@@ -52,15 +59,17 @@ class VetFormViewModel : ViewModel() {
 
     fun loadVet(vetId: String?) {
         if (vetId != null) {
-            val vet = MockDataRepository.getVetById(vetId)
-            if (vet != null) {
-                _uiState.value = VetFormUiState(
-                    vetId = vet.id,
-                    isEditing = true,
-                    name = vet.name,
-                    specialty = vet.specialty ?: "",
-                    phone = vet.phone ?: ""
-                )
+            viewModelScope.launch {
+                val vet = repository.getVetById(vetId)
+                if (vet != null) {
+                    _uiState.value = VetFormUiState(
+                        vetId = vet.id,
+                        isEditing = true,
+                        name = vet.name,
+                        specialty = vet.specialty ?: "",
+                        phone = vet.phone ?: ""
+                    )
+                }
             }
         }
     }
@@ -102,37 +111,43 @@ class VetFormViewModel : ViewModel() {
 
         val state = _uiState.value
         val vet = Veterinarian(
-            id = state.vetId ?: MockDataRepository.generateId("vet"),
+            id = state.vetId ?: repository.generateId("vet"),
             name = state.name.trim(),
             specialty = state.specialty.trim().ifBlank { null },
             phone = state.phone.trim().ifBlank { null }
         )
 
-        val success = if (state.isEditing) {
-            MockDataRepository.updateVeterinarian(vet)
-        } else {
-            MockDataRepository.addVeterinarian(vet)
-            true
+        viewModelScope.launch {
+            try {
+                if (state.isEditing) {
+                    repository.updateVeterinarian(vet)
+                } else {
+                    repository.insertVeterinarian(vet)
+                }
+
+                // Log de creación/actualización
+                ActivityLogger.logCrud(
+                    screen = ActivityLogger.Screens.VET_FORM,
+                    action = if (state.isEditing) ActivityLogger.Actions.UPDATE else ActivityLogger.Actions.CREATE,
+                    entityType = ActivityLogger.EntityTypes.VETERINARIAN,
+                    entityId = vet.id,
+                    entityName = vet.name
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveSuccess = true
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveSuccess = false,
+                    error = "Error al guardar: ${e.message}"
+                )
+            }
         }
 
-        // Log de creación/actualización
-        if (success) {
-            ActivityLogger.logCrud(
-                screen = ActivityLogger.Screens.VET_FORM,
-                action = if (state.isEditing) ActivityLogger.Actions.UPDATE else ActivityLogger.Actions.CREATE,
-                entityType = ActivityLogger.EntityTypes.VETERINARIAN,
-                entityId = vet.id,
-                entityName = vet.name
-            )
-        }
-
-        _uiState.value = _uiState.value.copy(
-            isSaving = false,
-            saveSuccess = success,
-            error = if (!success) "Error al guardar" else null
-        )
-
-        return success
+        return true
     }
 
     fun resetState() {

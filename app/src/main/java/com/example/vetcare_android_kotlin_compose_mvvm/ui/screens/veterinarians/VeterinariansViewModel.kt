@@ -1,13 +1,16 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.veterinarians
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Appointment
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Veterinarian
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 /**
@@ -33,8 +36,12 @@ data class VeterinariansUiState(
 
 /**
  * ViewModel para lista de veterinarios
+ * Usa VetCareRepository con Room Database para persistencia local
  */
 class VeterinariansViewModel : ViewModel() {
+
+    // Repositorio con persistencia Room (SQLite)
+    private val repository: VetCareRepository = VetCareApplication.getRepository()
 
     private val _uiState = MutableStateFlow(VeterinariansUiState())
     val uiState: StateFlow<VeterinariansUiState> = _uiState.asStateFlow()
@@ -47,27 +54,38 @@ class VeterinariansViewModel : ViewModel() {
     private fun loadVeterinarians() {
         _uiState.value = _uiState.value.copy(isLoading = true)
 
-        val today = LocalDate.now()
-        val vetsWithStats = MockDataRepository.veterinarians.map { vet ->
-            val vetAppointments = MockDataRepository.getAppointmentsByVet(vet.id)
-            val todayAppts = vetAppointments.count { it.dateTime.toLocalDate() == today }
-            val upcoming = vetAppointments
-                .filter { it.dateTime.toLocalDate() >= today }
-                .sortedBy { it.dateTime }
-                .take(3)
+        viewModelScope.launch {
+            try {
+                val today = LocalDate.now()
+                val veterinarians = repository.getAllVeterinarians()
 
-            VetWithStats(
-                vet = vet,
-                todayAppointments = todayAppts,
-                totalAppointments = vetAppointments.size,
-                upcomingAppointments = upcoming
-            )
+                val vetsWithStats = veterinarians.map { vet ->
+                    val vetAppointments = repository.getAppointmentsByVet(vet.id)
+                    val todayAppts = vetAppointments.count { it.dateTime.toLocalDate() == today }
+                    val upcoming = vetAppointments
+                        .filter { it.dateTime.toLocalDate() >= today }
+                        .sortedBy { it.dateTime }
+                        .take(3)
+
+                    VetWithStats(
+                        vet = vet,
+                        todayAppointments = todayAppts,
+                        totalAppointments = vetAppointments.size,
+                        upcomingAppointments = upcoming
+                    )
+                }
+
+                _uiState.value = VeterinariansUiState(
+                    veterinarians = vetsWithStats,
+                    isLoading = false
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Error al cargar veterinarios: ${e.message}"
+                )
+            }
         }
-
-        _uiState.value = VeterinariansUiState(
-            veterinarians = vetsWithStats,
-            isLoading = false
-        )
     }
 
     fun updateSearchQuery(query: String) {
@@ -91,26 +109,34 @@ class VeterinariansViewModel : ViewModel() {
     }
 
     fun deleteVet(vetId: String) {
-        val vet = MockDataRepository.getVetById(vetId)
-        val vetName = vet?.name ?: "Veterinario"
+        viewModelScope.launch {
+            try {
+                val vet = repository.getVetById(vetId)
+                val vetName = vet?.name ?: "Veterinario"
 
-        try {
-            MockDataRepository.deleteVeterinarian(vetId)
-            ActivityLogger.logCrud(
-                screen = ActivityLogger.Screens.VETS_LIST,
-                action = ActivityLogger.Actions.DELETE,
-                entityType = ActivityLogger.EntityTypes.VETERINARIAN,
-                entityId = vetId,
-                entityName = vetName
-            )
-            _uiState.value = _uiState.value.copy(
-                snackbarMessage = "$vetName eliminado correctamente"
-            )
-            loadVeterinarians()
-        } catch (e: Exception) {
-            _uiState.value = _uiState.value.copy(
-                error = "Error al eliminar $vetName"
-            )
+                val success = repository.deleteVeterinarian(vetId)
+                if (success) {
+                    ActivityLogger.logCrud(
+                        screen = ActivityLogger.Screens.VETS_LIST,
+                        action = ActivityLogger.Actions.DELETE,
+                        entityType = ActivityLogger.EntityTypes.VETERINARIAN,
+                        entityId = vetId,
+                        entityName = vetName
+                    )
+                    _uiState.value = _uiState.value.copy(
+                        snackbarMessage = "$vetName eliminado correctamente"
+                    )
+                    loadVeterinarians()
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Error al eliminar $vetName"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error al eliminar: ${e.message}"
+                )
+            }
         }
     }
 

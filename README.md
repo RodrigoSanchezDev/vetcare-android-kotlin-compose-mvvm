@@ -6,8 +6,9 @@
 
 <div align="center">
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-1.5.0-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.09-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Room](https://img.shields.io/badge/Room-2.6.1-4285F4?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/training/data-storage/room)
 [![Material 3](https://img.shields.io/badge/Material%203-Design-757575?style=for-the-badge&logo=materialdesign&logoColor=white)](https://m3.material.io/)
 [![Android](https://img.shields.io/badge/Android-API%2026+-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Architecture](https://img.shields.io/badge/Architecture-MVVM-FF6F00?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/topic/architecture)
@@ -67,6 +68,7 @@
 | 👨‍⚕️ **Staff Veterinario** | Directorio, especialidades, agenda por profesional |
 | 🔔 **Notificaciones** | Recordatorios automáticos de citas y vacunas |
 | 📊 **Dashboard Admin** | Métricas en tiempo real, accesos rápidos |
+| 💾 **Persistencia Local** | Room Database (SQLite), datos offline, sincronización automática |
 | 📝 **Registro de Actividad** | Auditoría completa de acciones del sistema |
 | 🎨 **Temas y Apariencia** | Modo Claro, Oscuro y Automático (según sistema) |
 | ♿ **Accesibilidad** | Alto contraste, reducción de animaciones, TalkBack |
@@ -78,6 +80,9 @@
 
 ```
 ✅ Arquitectura MVVM con StateFlow reactivo
+✅ Persistencia local con Room Database (SQLite)
+✅ Operaciones CRUD completas sin conexión a internet
+✅ TypeConverters para LocalDateTime y Enums
 ✅ Navegación declarativa con Compose Navigation
 ✅ Notificaciones con WorkManager
 ✅ Animaciones con AnimatedVisibility y animateContentSize
@@ -100,9 +105,16 @@
 ### Core
 | Tecnología | Versión | Propósito |
 |------------|---------|-----------|
-| ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | 1.9.0 | Lenguaje principal |
+| ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | 2.0.21 | Lenguaje principal |
 | ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white) | BOM 2024.09 | UI declarativa |
 | ![Material 3](https://img.shields.io/badge/Material%203-757575?style=flat-square&logo=materialdesign&logoColor=white) | Latest | Sistema de diseño |
+
+### Persistencia de Datos
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| ![Room](https://img.shields.io/badge/Room-4285F4?style=flat-square&logo=android&logoColor=white) | 2.6.1 | Base de datos SQLite |
+| SharedPreferences | - | Configuración de usuario |
+| KSP | 2.0.21-1.0.25 | Procesador de anotaciones |
 
 ### Arquitectura & Datos
 | Tecnología | Propósito |
@@ -143,19 +155,33 @@ El proyecto implementa **Clean Architecture** con el patrón **MVVM** (Model-Vie
 ├─────────────────────────────────────────────────────────────────┤
 │                          DATA LAYER                              │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌──────────────┐ │
-│  │   Repository    │◄───│  Data Sources   │◄───│   Entities   │ │
-│  │   (Interface)   │    │  (In-Memory)    │    │              │ │
+│  │   Repository    │◄───│      DAOs       │◄───│   Entities   │ │
+│  │   (Singleton)   │    │  (Room/SQLite)  │    │   (@Entity)  │ │
 │  └─────────────────┘    └─────────────────┘    └──────────────┘ │
+│                               │                                  │
+│                    ┌──────────▼──────────┐                      │
+│                    │   Room Database     │                      │
+│                    │  (vetcare_database) │                      │
+│                    └─────────────────────┘                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Flujo de Datos
 
 ```
-User Action → Screen → ViewModel → Repository → Data Source
-                ↑                                    │
-                └────────── StateFlow ◄─────────────┘
+User Action → Screen → ViewModel → Repository → DAO → Room Database (SQLite)
+                ↑                                              │
+                └──────────── StateFlow/Flow ◄────────────────┘
 ```
+
+### Persistencia Local
+
+La aplicación utiliza **Room Database** como capa de abstracción sobre SQLite, proporcionando:
+
+- **Operaciones offline**: Todos los datos persisten localmente sin necesidad de conexión
+- **Type Safety**: Verificación en tiempo de compilación de consultas SQL
+- **Reactive Streams**: Integración nativa con Kotlin Coroutines y Flow
+- **Migrations**: Soporte para actualizaciones de esquema de base de datos
 
 ---
 
@@ -165,100 +191,102 @@ User Action → Screen → ViewModel → Repository → Data Source
 app/
 ├── src/main/
 │   ├── java/com/example/vetcare/
+│   │   ├── VetCareApplication.kt            # Application class (inicializa Room)
+│   │   │
 │   │   ├── data/
+│   │   │   ├── local/
+│   │   │   │   ├── VetCareDatabase.kt       # Room Database principal
+│   │   │   │   ├── Converters.kt            # TypeConverters (DateTime, Enums)
+│   │   │   │   │
+│   │   │   │   ├── dao/                     # Data Access Objects
+│   │   │   │   │   ├── UserDao.kt
+│   │   │   │   │   ├── OwnerDao.kt
+│   │   │   │   │   ├── PetDao.kt
+│   │   │   │   │   ├── VeterinarianDao.kt
+│   │   │   │   │   ├── AppointmentDao.kt
+│   │   │   │   │   ├── ConsultationDao.kt
+│   │   │   │   │   ├── VaccineRecordDao.kt
+│   │   │   │   │   └── ActivityEventDao.kt
+│   │   │   │   │
+│   │   │   │   ├── entity/                  # Room Entities (@Entity)
+│   │   │   │   │   ├── UserEntity.kt
+│   │   │   │   │   ├── OwnerEntity.kt
+│   │   │   │   │   ├── PetEntity.kt
+│   │   │   │   │   ├── VeterinarianEntity.kt
+│   │   │   │   │   ├── AppointmentEntity.kt
+│   │   │   │   │   ├── ConsultationEntity.kt
+│   │   │   │   │   ├── VaccineRecordEntity.kt
+│   │   │   │   │   └── ActivityEventEntity.kt
+│   │   │   │   │
+│   │   │   │   └── mapper/
+│   │   │   │       └── EntityMappers.kt     # Conversión Entity ↔ Model
+│   │   │   │
 │   │   │   ├── logging/
 │   │   │   │   └── ActivityLogger.kt        # Sistema de auditoría
-│   │   │   ├── model/
-│   │   │   │   ├── Models.kt                # Entidades del dominio
-│   │   │   │   ├── Pet.kt                   # Modelo de mascota
-│   │   │   │   ├── Appointment.kt           # Modelo de cita
-│   │   │   │   └── Veterinarian.kt          # Modelo de veterinario
+│   │   │   │
+│   │   │   ├── model/                       # Modelos de dominio
+│   │   │   │   ├── User.kt
+│   │   │   │   ├── Owner.kt
+│   │   │   │   ├── Pet.kt
+│   │   │   │   ├── Appointment.kt
+│   │   │   │   ├── Veterinarian.kt
+│   │   │   │   ├── Consultation.kt
+│   │   │   │   ├── VaccineRecord.kt
+│   │   │   │   └── ActivityEvent.kt
+│   │   │   │
 │   │   │   ├── repository/
-│   │   │   │   └── MockDataRepository.kt    # Repositorio in-memory
+│   │   │   │   └── VetCareRepository.kt     # Repositorio unificado (Room)
+│   │   │   │
 │   │   │   └── session/
 │   │   │       └── SessionManager.kt        # Gestión de sesión
 │   │   │
 │   │   ├── notifications/
 │   │   │   ├── ReminderScheduler.kt         # Programador de recordatorios
-│   │   │   ├── AppointmentReminderWorker.kt # Worker de citas
-│   │   │   └── VaccineReminderWorker.kt     # Worker de vacunas
+│   │   │   └── ReminderWorkers.kt           # Workers de citas y vacunas
 │   │   │
 │   │   ├── ui/
+│   │   │   ├── accessibility/
+│   │   │   │   └── AccessibilityUtils.kt    # Utilidades de accesibilidad
+│   │   │   │
 │   │   │   ├── components/
 │   │   │   │   ├── BottomNavigation.kt      # Navegación inferior
-│   │   │   │   ├── Cards.kt                 # Componentes de tarjetas
-│   │   │   │   ├── Buttons.kt               # Botones personalizados
-│   │   │   │   └── InputFields.kt           # Campos de entrada
+│   │   │   │   ├── Cards.kt                 # Tarjetas personalizadas
+│   │   │   │   ├── Buttons.kt               # Botones con estilos
+│   │   │   │   ├── InputFields.kt           # Campos de entrada
+│   │   │   │   ├── TopBars.kt               # Barras superiores
+│   │   │   │   └── Tabs.kt                  # Pestañas de filtro
 │   │   │   │
 │   │   │   ├── navigation/
 │   │   │   │   ├── NavRoutes.kt             # Definición de rutas
 │   │   │   │   └── AppNavGraph.kt           # Grafo de navegación
 │   │   │   │
 │   │   │   ├── screens/
-│   │   │   │   ├── auth/
-│   │   │   │   │   ├── LoginScreen.kt
-│   │   │   │   │   ├── AuthViewModel.kt
-│   │   │   │   │   ├── OnboardingScreen.kt
-│   │   │   │   │   └── ResetPasswordScreen.kt
-│   │   │   │   │
-│   │   │   │   ├── admin/
-│   │   │   │   │   ├── AdminMainScreen.kt
-│   │   │   │   │   └── AdminHomeScreen.kt
-│   │   │   │   │
-│   │   │   │   ├── owner/
-│   │   │   │   │   ├── OwnerMainScreen.kt
-│   │   │   │   │   └── OwnerHomeScreen.kt
-│   │   │   │   │
-│   │   │   │   ├── pets/
-│   │   │   │   │   ├── PetsListScreen.kt
-│   │   │   │   │   ├── PetsViewModel.kt
-│   │   │   │   │   ├── PetDetailScreen.kt
-│   │   │   │   │   ├── PetFormScreen.kt
-│   │   │   │   │   └── VaccineFormScreen.kt
-│   │   │   │   │
-│   │   │   │   ├── appointments/
-│   │   │   │   │   ├── AppointmentsListScreen.kt
-│   │   │   │   │   ├── AppointmentsViewModel.kt
-│   │   │   │   │   └── AppointmentFormScreen.kt
-│   │   │   │   │
-│   │   │   │   ├── veterinarians/
-│   │   │   │   │   ├── VeterinariansListScreen.kt
-│   │   │   │   │   ├── VeterinariansViewModel.kt
-│   │   │   │   │   ├── VetFormScreen.kt
-│   │   │   │   │   └── VetFormViewModel.kt
-│   │   │   │   │
-│   │   │   │   ├── consultations/
-│   │   │   │   │   └── ConsultationFormScreen.kt
-│   │   │   │   │
-│   │   │   │   ├── activity/
-│   │   │   │   │   ├── ActivityLogScreen.kt
-│   │   │   │   │   └── ActivityLogViewModel.kt
-│   │   │   │   │
-│   │   │   │   ├── settings/
-│   │   │   │   │   └── SettingsScreen.kt
-│   │   │   │   │
-│   │   │   │   └── discover/
-│   │   │   │       └── DiscoverScreen.kt
+│   │   │   │   ├── auth/                    # Autenticación
+│   │   │   │   ├── admin/                   # Panel administrador
+│   │   │   │   ├── owner/                   # Panel propietario
+│   │   │   │   ├── pets/                    # Gestión de mascotas
+│   │   │   │   ├── appointments/            # Gestión de citas
+│   │   │   │   ├── veterinarians/           # Gestión de veterinarios
+│   │   │   │   ├── consultations/           # Consultas médicas
+│   │   │   │   ├── activity/                # Registro de actividad
+│   │   │   │   ├── settings/                # Configuración
+│   │   │   │   └── discover/                # Descubrir servicios
 │   │   │   │
 │   │   │   └── theme/
 │   │   │       ├── Color.kt                 # Paletas de colores
 │   │   │       ├── Theme.kt                 # Configuración del tema
-│   │   │       ├── ThemeSettings.kt         # Gestión de preferencias (tema, accesibilidad)
+│   │   │       ├── ThemeSettings.kt         # Preferencias (SharedPreferences)
 │   │   │       └── Typography.kt            # Tipografía del sistema
 │   │   │
 │   │   └── MainActivity.kt
 │   │
 │   └── res/
 │       ├── drawable/                         # Assets de imágenes
-│       ├── values/
-│       │   ├── strings.xml                   # Localización ES-CL
-│       │   ├── colors.xml
-│       │   └── themes.xml
-│       └── xml/
-│           └── backup_rules.xml
+│       └── values/                           # Recursos (strings, colors)
 │
 ├── build.gradle.kts                          # Configuración del módulo
-└── proguard-rules.pro                        # Reglas de ofuscación
+└── gradle/
+    └── libs.versions.toml                    # Catálogo de versiones
 ```
 
 ---
@@ -455,6 +483,56 @@ VetCare está diseñado siguiendo las pautas de accesibilidad de Android para ga
 - Exportación de registros
 - Visualización para auditoría
 
+### 💾 Base de Datos Local (Room)
+
+La aplicación implementa persistencia local completa utilizando **Room Database**, permitiendo operaciones sin conexión a internet.
+
+#### Esquema de Base de Datos
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     vetcare_database                             │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐  │
+│  │   users     │    │   owners    │◄───│       pets          │  │
+│  │─────────────│    │─────────────│    │─────────────────────│  │
+│  │ id (PK)     │    │ id (PK)     │    │ id (PK)             │  │
+│  │ email       │    │ fullName    │    │ ownerId (FK)        │  │
+│  │ passwordHash│    │ email       │    │ name, species       │  │
+│  │ role        │    │ phone       │    │ breed, ageYears     │  │
+│  └─────────────┘    └─────────────┘    └─────────────────────┘  │
+│                                                │                 │
+│  ┌─────────────────────┐    ┌──────────────────▼──────────────┐ │
+│  │   veterinarians     │    │         appointments            │ │
+│  │─────────────────────│    │─────────────────────────────────│ │
+│  │ id (PK)             │◄───│ id (PK)                         │ │
+│  │ name, specialty     │    │ petId (FK), vetId (FK)          │ │
+│  │ phone               │    │ dateTime, reason, status        │ │
+│  └─────────────────────┘    └─────────────────────────────────┘ │
+│                                                                  │
+│  ┌─────────────────────┐    ┌─────────────────────────────────┐ │
+│  │   consultations     │    │       vaccine_records           │ │
+│  │─────────────────────│    │─────────────────────────────────│ │
+│  │ id (PK)             │    │ id (PK)                         │ │
+│  │ petId (FK)          │    │ petId (FK)                      │ │
+│  │ vetId (FK)          │    │ vaccineName                     │ │
+│  │ diagnosis           │    │ lastDate, nextDueDate           │ │
+│  │ treatment           │    │                                 │ │
+│  └─────────────────────┘    └─────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Características de Persistencia
+
+| Característica | Implementación |
+|----------------|----------------|
+| **Base de datos** | SQLite via Room 2.6.1 |
+| **Operaciones** | CRUD completo (Create, Read, Update, Delete) |
+| **Relaciones** | Foreign Keys con CASCADE delete |
+| **Tipos complejos** | TypeConverters para LocalDateTime y Enums |
+| **Consultas** | Flow para datos reactivos, suspend para operaciones |
+| **Inicialización** | Datos de demostración precargados |
+
 ---
 
 ## 🔄 Flujo de Usuario
@@ -486,7 +564,7 @@ graph TD
 
 ### Versión 1.0 ✅
 - [x] Sistema de autenticación
-- [x] Gestión de mascotas
+- [x] Gestión de mascotas (CRUD completo)
 - [x] Gestión de citas
 - [x] Gestión de veterinarios
 - [x] Notificaciones automáticas
@@ -494,11 +572,13 @@ graph TD
 - [x] UI/UX Material 3
 - [x] Sistema de temas (Claro/Oscuro/Automático)
 - [x] Accesibilidad (Alto contraste, TalkBack, reducir animaciones)
+- [x] **Persistencia local con Room Database (SQLite)**
+- [x] **Operaciones offline sin conexión a internet**
 
 ### Versión 2.0 🔜
-- [ ] Integración con backend REST
-- [ ] Persistencia con Room Database
-- [ ] Autenticación con Firebase
+- [ ] Integración con backend REST API
+- [ ] Autenticación con Firebase Auth
+- [ ] Sincronización cloud
 - [ ] Chat en tiempo real
 - [ ] Telemedicina veterinaria
 - [ ] Pagos integrados
@@ -506,9 +586,9 @@ graph TD
 ### Versión 3.0 📋
 - [ ] Módulo de farmacia
 - [ ] Gestión de inventario
-- [ ] Reportes y analíticas
-- [ ] Multi-idioma
-- [ ] Modo offline completo
+- [ ] Reportes y analíticas avanzadas
+- [ ] Multi-idioma (i18n)
+- [ ] Backup automático en la nube
 
 ---
 
@@ -553,7 +633,7 @@ Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE)
 
 <div align="center">
 
-**Desarrollado usando Kotlin & Jetpack Compose**
+**Desarrollado con Kotlin, Jetpack Compose & Room Database**
 
 ⭐ Si este proyecto te resultó útil, considera darle una estrella
 

@@ -2,10 +2,11 @@ package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.appointments
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Appointment
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.AppointmentStatus
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import com.example.vetcare_android_kotlin_compose_mvvm.data.session.SessionManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -43,8 +44,12 @@ data class AppointmentsListUiState(
 
 /**
  * ViewModel para gestión de citas
+ * Usa VetCareRepository con Room Database para persistencia local
  */
 class AppointmentsViewModel : ViewModel() {
+
+    // Repositorio con persistencia Room (SQLite)
+    private val repository: VetCareRepository = VetCareApplication.getRepository()
 
     private val _uiState = MutableStateFlow(AppointmentsListUiState())
     val uiState: StateFlow<AppointmentsListUiState> = _uiState.asStateFlow()
@@ -82,27 +87,36 @@ class AppointmentsViewModel : ViewModel() {
     private fun loadAppointments() {
         _uiState.value = _uiState.value.copy(isLoading = true)
 
-        val isAdmin = SessionManager.isAdmin()
-        val ownerId = SessionManager.getOwnerId()
+        viewModelScope.launch {
+            try {
+                val isAdmin = SessionManager.isAdmin()
+                val ownerId = SessionManager.getOwnerId()
 
-        val appointments = if (isAdmin) {
-            MockDataRepository.appointments
-        } else {
-            // Owner solo ve citas de sus mascotas
-            val petIds = ownerId?.let {
-                MockDataRepository.getPetsByOwner(it).map { pet -> pet.id }
-            } ?: emptyList()
-            MockDataRepository.appointments.filter { it.petId in petIds }
+                val appointments = if (isAdmin) {
+                    repository.getAllAppointments()
+                } else {
+                    // Owner solo ve citas de sus mascotas
+                    val petIds = ownerId?.let {
+                        repository.getPetsByOwner(it).map { pet -> pet.id }
+                    } ?: emptyList()
+                    repository.getAllAppointments().filter { it.petId in petIds }
+                }
+
+                _allAppointments.value = appointments
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isAdmin = isAdmin
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Error al cargar citas: ${e.message}"
+                )
+            }
         }
-
-        _allAppointments.value = appointments
-        _uiState.value = _uiState.value.copy(
-            isLoading = false,
-            isAdmin = isAdmin
-        )
     }
 
-    private fun filterAppointments(
+    private suspend fun filterAppointments(
         appointments: List<Appointment>,
         query: String,
         filter: AppointmentFilter,
@@ -114,8 +128,8 @@ class AppointmentsViewModel : ViewModel() {
             val apptDate = appt.dateTime.toLocalDate()
 
             // Filtro por búsqueda (mascota y veterinario)
-            val pet = MockDataRepository.getPetById(appt.petId)
-            val vet = MockDataRepository.getVetById(appt.vetId)
+            val pet = repository.getPetById(appt.petId)
+            val vet = repository.getVetById(appt.vetId)
             val matchesQuery = query.isBlank() ||
                 pet?.name?.contains(query, ignoreCase = true) == true ||
                 vet?.name?.contains(query, ignoreCase = true) == true ||
@@ -187,21 +201,23 @@ class AppointmentsViewModel : ViewModel() {
     }
 
     fun updateAppointmentStatus(appointmentId: String, newStatus: AppointmentStatus) {
-        val appointment = MockDataRepository.getAppointmentById(appointmentId)
-        if (appointment != null) {
+        viewModelScope.launch {
             try {
-                MockDataRepository.updateAppointment(appointment.copy(status = newStatus))
-                ActivityLogger.logCrud(
-                    screen = ActivityLogger.Screens.APPOINTMENTS_LIST,
-                    action = ActivityLogger.Actions.UPDATE,
-                    entityType = ActivityLogger.EntityTypes.APPOINTMENT,
-                    entityId = appointmentId,
-                    entityName = "Estado: ${newStatus.displayName}"
-                )
-                _uiState.value = _uiState.value.copy(
-                    snackbarMessage = "Cita actualizada a: ${newStatus.displayName}"
-                )
-                loadAppointments()
+                val appointment = repository.getAppointmentById(appointmentId)
+                if (appointment != null) {
+                    repository.updateAppointment(appointment.copy(status = newStatus))
+                    ActivityLogger.logCrud(
+                        screen = ActivityLogger.Screens.APPOINTMENTS_LIST,
+                        action = ActivityLogger.Actions.UPDATE,
+                        entityType = ActivityLogger.EntityTypes.APPOINTMENT,
+                        entityId = appointmentId,
+                        entityName = "Estado: ${newStatus.displayName}"
+                    )
+                    _uiState.value = _uiState.value.copy(
+                        snackbarMessage = "Cita actualizada a: ${newStatus.displayName}"
+                    )
+                    loadAppointments()
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     error = "Error al actualizar la cita"
@@ -211,22 +227,24 @@ class AppointmentsViewModel : ViewModel() {
     }
 
     fun cancelAppointment(appointmentId: String) {
-        try {
-            MockDataRepository.cancelAppointment(appointmentId)
-            ActivityLogger.logCrud(
-                screen = ActivityLogger.Screens.APPOINTMENTS_LIST,
-                action = ActivityLogger.Actions.CANCEL,
-                entityType = ActivityLogger.EntityTypes.APPOINTMENT,
-                entityId = appointmentId
-            )
-            _uiState.value = _uiState.value.copy(
-                snackbarMessage = "Cita cancelada"
-            )
-            loadAppointments()
-        } catch (e: Exception) {
-            _uiState.value = _uiState.value.copy(
-                error = "Error al cancelar la cita"
-            )
+        viewModelScope.launch {
+            try {
+                repository.cancelAppointment(appointmentId)
+                ActivityLogger.logCrud(
+                    screen = ActivityLogger.Screens.APPOINTMENTS_LIST,
+                    action = ActivityLogger.Actions.CANCEL,
+                    entityType = ActivityLogger.EntityTypes.APPOINTMENT,
+                    entityId = appointmentId
+                )
+                _uiState.value = _uiState.value.copy(
+                    snackbarMessage = "Cita cancelada"
+                )
+                loadAppointments()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error al cancelar la cita"
+                )
+            }
         }
     }
 

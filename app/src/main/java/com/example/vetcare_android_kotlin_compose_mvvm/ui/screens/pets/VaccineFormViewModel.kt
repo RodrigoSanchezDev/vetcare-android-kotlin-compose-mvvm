@@ -1,12 +1,15 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.pets
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.VaccineRecord
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 /**
@@ -32,8 +35,12 @@ data class VaccineFormUiState(
 
 /**
  * ViewModel para crear/editar vacuna
+ * Usa VetCareRepository con Room Database para persistencia local
  */
 class VaccineFormViewModel : ViewModel() {
+
+    // Repositorio con persistencia Room (SQLite)
+    private val repository: VetCareRepository = VetCareApplication.getRepository()
 
     private val _uiState = MutableStateFlow(VaccineFormUiState())
     val uiState: StateFlow<VaccineFormUiState> = _uiState.asStateFlow()
@@ -52,17 +59,20 @@ class VaccineFormViewModel : ViewModel() {
 
     fun loadVaccine(vaccineId: String?, petId: String?) {
         if (vaccineId != null) {
-            val vaccine = MockDataRepository.vaccineRecords.find { it.id == vaccineId }
-            if (vaccine != null) {
-                _uiState.value = VaccineFormUiState(
-                    vaccineId = vaccine.id,
-                    isEditing = true,
-                    petId = vaccine.petId,
-                    vaccineName = vaccine.vaccineName,
-                    lastDate = vaccine.lastDate,
-                    nextDueDate = vaccine.nextDueDate,
-                    notes = vaccine.notes ?: ""
-                )
+            viewModelScope.launch {
+                val vaccines = repository.getVaccinesByPet(petId ?: "")
+                val vaccine = vaccines.find { it.id == vaccineId }
+                if (vaccine != null) {
+                    _uiState.value = VaccineFormUiState(
+                        vaccineId = vaccine.id,
+                        isEditing = true,
+                        petId = vaccine.petId,
+                        vaccineName = vaccine.vaccineName,
+                        lastDate = vaccine.lastDate,
+                        nextDueDate = vaccine.nextDueDate,
+                        notes = vaccine.notes ?: ""
+                    )
+                }
             }
         } else if (petId != null) {
             _uiState.value = _uiState.value.copy(petId = petId)
@@ -108,7 +118,7 @@ class VaccineFormViewModel : ViewModel() {
 
         val state = _uiState.value
         val vaccine = VaccineRecord(
-            id = state.vaccineId ?: MockDataRepository.generateId("vac"),
+            id = state.vaccineId ?: repository.generateId("vac"),
             petId = state.petId,
             vaccineName = state.vaccineName.trim(),
             lastDate = state.lastDate,
@@ -116,32 +126,38 @@ class VaccineFormViewModel : ViewModel() {
             notes = state.notes.trim().ifBlank { null }
         )
 
-        val success = if (state.isEditing) {
-            MockDataRepository.updateVaccineRecord(vaccine)
-        } else {
-            MockDataRepository.addVaccineRecord(vaccine)
-            true
+        viewModelScope.launch {
+            try {
+                if (state.isEditing) {
+                    repository.updateVaccineRecord(vaccine)
+                } else {
+                    repository.insertVaccineRecord(vaccine)
+                }
+
+                // Log de creación/actualización
+                val pet = repository.getPetById(state.petId)
+                ActivityLogger.logCrud(
+                    screen = ActivityLogger.Screens.VACCINE_FORM,
+                    action = if (state.isEditing) ActivityLogger.Actions.UPDATE else ActivityLogger.Actions.CREATE,
+                    entityType = ActivityLogger.EntityTypes.VACCINE,
+                    entityId = vaccine.id,
+                    entityName = "${vaccine.vaccineName} (${pet?.name ?: ""})"
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveSuccess = true
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveSuccess = false,
+                    error = "Error al guardar: ${e.message}"
+                )
+            }
         }
 
-        // Log de creación/actualización
-        if (success) {
-            val pet = MockDataRepository.getPetById(state.petId)
-            ActivityLogger.logCrud(
-                screen = ActivityLogger.Screens.VACCINE_FORM,
-                action = if (state.isEditing) ActivityLogger.Actions.UPDATE else ActivityLogger.Actions.CREATE,
-                entityType = ActivityLogger.EntityTypes.VACCINE,
-                entityId = vaccine.id,
-                entityName = "${vaccine.vaccineName} (${pet?.name ?: ""})"
-            )
-        }
-
-        _uiState.value = _uiState.value.copy(
-            isSaving = false,
-            saveSuccess = success,
-            error = if (!success) "Error al guardar" else null
-        )
-
-        return success
+        return true
     }
 
     fun resetState() {

@@ -2,10 +2,11 @@ package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.pets
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Pet
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.PetSpecies
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import com.example.vetcare_android_kotlin_compose_mvvm.data.session.SessionManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -44,8 +45,12 @@ data class PetsListUiState(
 
 /**
  * ViewModel para la gestión de mascotas
+ * Usa VetCareRepository con Room Database para persistencia local
  */
 class PetsViewModel : ViewModel() {
+
+    // Repositorio con persistencia Room (SQLite)
+    private val repository: VetCareRepository = VetCareApplication.getRepository()
 
     private val _uiState = MutableStateFlow(PetsListUiState())
     val uiState: StateFlow<PetsListUiState> = _uiState.asStateFlow()
@@ -87,31 +92,41 @@ class PetsViewModel : ViewModel() {
     private fun loadPets() {
         _uiState.value = _uiState.value.copy(isLoading = true)
 
-        val isAdmin = SessionManager.isAdmin()
-        val ownerId = SessionManager.getOwnerId()
+        viewModelScope.launch {
+            try {
+                val isAdmin = SessionManager.isAdmin()
+                val ownerId = SessionManager.getOwnerId()
 
-        val pets = if (isAdmin) {
-            MockDataRepository.pets
-        } else {
-            ownerId?.let { MockDataRepository.getPetsByOwner(it) } ?: emptyList()
+                // Obtener mascotas desde Room Database
+                val pets = if (isAdmin) {
+                    repository.getAllPets()
+                } else {
+                    ownerId?.let { repository.getPetsByOwner(it) } ?: emptyList()
+                }
+
+                // Obtener lista de dueños para filtro (solo admin)
+                val availableOwners = if (isAdmin) {
+                    repository.getAllOwners().map { it.id to it.fullName }
+                } else {
+                    emptyList()
+                }
+
+                _allPets.value = pets
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isAdmin = isAdmin,
+                    availableOwners = availableOwners
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Error al cargar mascotas: ${e.message}"
+                )
+            }
         }
-
-        // Obtener lista de dueños para filtro (solo admin)
-        val availableOwners = if (isAdmin) {
-            MockDataRepository.owners.map { it.id to it.fullName }
-        } else {
-            emptyList()
-        }
-
-        _allPets.value = pets
-        _uiState.value = _uiState.value.copy(
-            isLoading = false,
-            isAdmin = isAdmin,
-            availableOwners = availableOwners
-        )
     }
 
-    private fun filterAndSortPets(
+    private suspend fun filterAndSortPets(
         pets: List<Pet>,
         query: String,
         species: PetSpecies?,
@@ -121,7 +136,7 @@ class PetsViewModel : ViewModel() {
         return pets
             .filter { pet ->
                 // Filtro por búsqueda (nombre, raza, y dueño si es admin)
-                val ownerName = MockDataRepository.getOwnerById(pet.ownerId)?.fullName ?: ""
+                val ownerName = repository.getOwnerById(pet.ownerId)?.fullName ?: ""
                 val matchesQuery = query.isBlank() ||
                     pet.name.contains(query, ignoreCase = true) ||
                     pet.breed?.contains(query, ignoreCase = true) == true ||
@@ -186,12 +201,14 @@ class PetsViewModel : ViewModel() {
     fun updateOwnerFilter(ownerId: String?) {
         _ownerFilter.value = ownerId
         if (ownerId != null) {
-            val ownerName = MockDataRepository.getOwnerById(ownerId)?.fullName ?: ""
-            ActivityLogger.log(
-                screen = ActivityLogger.Screens.PETS_LIST,
-                action = ActivityLogger.Actions.FILTER,
-                metadata = mapOf("filterType" to "owner", "value" to ownerName)
-            )
+            viewModelScope.launch {
+                val ownerName = repository.getOwnerById(ownerId)?.fullName ?: ""
+                ActivityLogger.log(
+                    screen = ActivityLogger.Screens.PETS_LIST,
+                    action = ActivityLogger.Actions.FILTER,
+                    metadata = mapOf("filterType" to "owner", "value" to ownerName)
+                )
+            }
         }
     }
 
@@ -203,27 +220,36 @@ class PetsViewModel : ViewModel() {
     }
 
     fun deletePet(petId: String) {
-        val pet = MockDataRepository.getPetById(petId)
-        val petName = pet?.name ?: "Mascota"
+        viewModelScope.launch {
+            try {
+                val pet = repository.getPetById(petId)
+                val petName = pet?.name ?: "Mascota"
 
-        try {
-            MockDataRepository.deletePet(petId)
-            // Log de eliminación
-            ActivityLogger.logCrud(
-                screen = ActivityLogger.Screens.PETS_LIST,
-                action = ActivityLogger.Actions.DELETE,
-                entityType = ActivityLogger.EntityTypes.PET,
-                entityId = petId,
-                entityName = pet?.name
-            )
-            _uiState.value = _uiState.value.copy(
-                snackbarMessage = "$petName eliminado correctamente"
-            )
-            loadPets() // Recargar lista
-        } catch (e: Exception) {
-            _uiState.value = _uiState.value.copy(
-                error = "Error al eliminar $petName"
-            )
+                val success = repository.deletePet(petId)
+
+                if (success) {
+                    // Log de eliminación
+                    ActivityLogger.logCrud(
+                        screen = ActivityLogger.Screens.PETS_LIST,
+                        action = ActivityLogger.Actions.DELETE,
+                        entityType = ActivityLogger.EntityTypes.PET,
+                        entityId = petId,
+                        entityName = pet?.name
+                    )
+                    _uiState.value = _uiState.value.copy(
+                        snackbarMessage = "$petName eliminado correctamente"
+                    )
+                    loadPets() // Recargar lista desde Room
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Error al eliminar $petName"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error al eliminar: ${e.message}"
+                )
+            }
         }
     }
 

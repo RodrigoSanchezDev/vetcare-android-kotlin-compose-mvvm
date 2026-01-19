@@ -1,13 +1,16 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.consultations
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Consultation
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Veterinarian
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 /**
@@ -35,28 +38,46 @@ data class ConsultationFormUiState(
 
 /**
  * ViewModel para crear/editar consulta médica
+ * Usa VetCareRepository con Room Database para persistencia local
  */
 class ConsultationFormViewModel : ViewModel() {
+
+    // Repositorio con persistencia Room (SQLite)
+    private val repository: VetCareRepository = VetCareApplication.getRepository()
 
     private val _uiState = MutableStateFlow(ConsultationFormUiState())
     val uiState: StateFlow<ConsultationFormUiState> = _uiState.asStateFlow()
 
-    val veterinarians: List<Veterinarian> = MockDataRepository.veterinarians
+    private val _veterinarians = MutableStateFlow<List<Veterinarian>>(emptyList())
+    val veterinarians: List<Veterinarian> get() = _veterinarians.value
+
+    init {
+        loadVeterinarians()
+    }
+
+    private fun loadVeterinarians() {
+        viewModelScope.launch {
+            _veterinarians.value = repository.getAllVeterinarians()
+        }
+    }
 
     fun loadConsultation(consultationId: String?, petId: String?) {
         if (consultationId != null) {
-            // Cargar consulta existente para editar
-            val consultation = MockDataRepository.consultations.find { it.id == consultationId }
-            if (consultation != null) {
-                _uiState.value = ConsultationFormUiState(
-                    consultationId = consultation.id,
-                    isEditing = true,
-                    petId = consultation.petId,
-                    vetId = consultation.vetId,
-                    diagnosis = consultation.diagnosis,
-                    treatment = consultation.treatment,
-                    notes = consultation.notes ?: ""
-                )
+            viewModelScope.launch {
+                // Cargar consulta existente para editar
+                val consultations = repository.getConsultationsByPet(petId ?: "")
+                val consultation = consultations.find { it.id == consultationId }
+                if (consultation != null) {
+                    _uiState.value = ConsultationFormUiState(
+                        consultationId = consultation.id,
+                        isEditing = true,
+                        petId = consultation.petId,
+                        vetId = consultation.vetId,
+                        diagnosis = consultation.diagnosis,
+                        treatment = consultation.treatment,
+                        notes = consultation.notes ?: ""
+                    )
+                }
             }
         } else if (petId != null) {
             // Nueva consulta para mascota específica
@@ -109,7 +130,7 @@ class ConsultationFormViewModel : ViewModel() {
 
         val state = _uiState.value
         val consultation = Consultation(
-            id = state.consultationId ?: MockDataRepository.generateId("cons"),
+            id = state.consultationId ?: repository.generateId("cons"),
             petId = state.petId,
             vetId = state.vetId,
             dateTime = LocalDateTime.now(),
@@ -118,32 +139,38 @@ class ConsultationFormViewModel : ViewModel() {
             notes = state.notes.trim().ifBlank { null }
         )
 
-        val success = if (state.isEditing) {
-            MockDataRepository.updateConsultation(consultation)
-        } else {
-            MockDataRepository.addConsultation(consultation)
-            true
+        viewModelScope.launch {
+            try {
+                if (state.isEditing) {
+                    repository.updateConsultation(consultation)
+                } else {
+                    repository.insertConsultation(consultation)
+                }
+
+                // Log de creación/actualización
+                val pet = repository.getPetById(state.petId)
+                ActivityLogger.logCrud(
+                    screen = ActivityLogger.Screens.CONSULTATION_FORM,
+                    action = if (state.isEditing) ActivityLogger.Actions.UPDATE else ActivityLogger.Actions.CREATE,
+                    entityType = ActivityLogger.EntityTypes.CONSULTATION,
+                    entityId = consultation.id,
+                    entityName = pet?.name
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveSuccess = true
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveSuccess = false,
+                    error = "Error al guardar: ${e.message}"
+                )
+            }
         }
 
-        // Log de creación/actualización
-        if (success) {
-            val pet = MockDataRepository.getPetById(state.petId)
-            ActivityLogger.logCrud(
-                screen = ActivityLogger.Screens.CONSULTATION_FORM,
-                action = if (state.isEditing) ActivityLogger.Actions.UPDATE else ActivityLogger.Actions.CREATE,
-                entityType = ActivityLogger.EntityTypes.CONSULTATION,
-                entityId = consultation.id,
-                entityName = pet?.name
-            )
-        }
-
-        _uiState.value = _uiState.value.copy(
-            isSaving = false,
-            saveSuccess = success,
-            error = if (!success) "Error al guardar" else null
-        )
-
-        return success
+        return true
     }
 
     fun resetState() {

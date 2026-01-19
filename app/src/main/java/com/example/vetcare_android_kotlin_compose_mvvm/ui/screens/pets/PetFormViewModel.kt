@@ -1,13 +1,17 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.pets
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
+import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Owner
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Pet
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.PetSpecies
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Estado UI para el formulario de mascota
@@ -36,29 +40,46 @@ data class PetFormUiState(
 
 /**
  * ViewModel para crear/editar mascota
+ * Usa VetCareRepository con Room Database para persistencia local
  */
 class PetFormViewModel : ViewModel() {
+
+    // Repositorio con persistencia Room (SQLite)
+    private val repository: VetCareRepository = VetCareApplication.getRepository()
 
     private val _uiState = MutableStateFlow(PetFormUiState())
     val uiState: StateFlow<PetFormUiState> = _uiState.asStateFlow()
 
-    val owners = MockDataRepository.owners
+    private val _owners = MutableStateFlow<List<Owner>>(emptyList())
+    val owners: List<Owner> get() = _owners.value
+
+    init {
+        loadOwners()
+    }
+
+    private fun loadOwners() {
+        viewModelScope.launch {
+            _owners.value = repository.getAllOwners()
+        }
+    }
 
     fun loadPet(petId: String?) {
         if (petId != null) {
-            val pet = MockDataRepository.getPetById(petId)
-            if (pet != null) {
-                _uiState.value = PetFormUiState(
-                    petId = pet.id,
-                    isEditing = true,
-                    name = pet.name,
-                    species = pet.species,
-                    breed = pet.breed ?: "",
-                    ageYears = pet.ageYears.toString(),
-                    weightKg = pet.weightKg?.toString() ?: "",
-                    notes = pet.notes ?: "",
-                    ownerId = pet.ownerId
-                )
+            viewModelScope.launch {
+                val pet = repository.getPetById(petId)
+                if (pet != null) {
+                    _uiState.value = PetFormUiState(
+                        petId = pet.id,
+                        isEditing = true,
+                        name = pet.name,
+                        species = pet.species,
+                        breed = pet.breed ?: "",
+                        ageYears = pet.ageYears.toString(),
+                        weightKg = pet.weightKg?.toString() ?: "",
+                        notes = pet.notes ?: "",
+                        ownerId = pet.ownerId
+                    )
+                }
             }
         }
     }
@@ -121,7 +142,7 @@ class PetFormViewModel : ViewModel() {
 
         val state = _uiState.value
         val pet = Pet(
-            id = state.petId ?: MockDataRepository.generateId("pet"),
+            id = state.petId ?: repository.generateId("pet"),
             ownerId = state.ownerId,
             name = state.name.trim(),
             species = state.species,
@@ -131,31 +152,37 @@ class PetFormViewModel : ViewModel() {
             notes = state.notes.trim().ifBlank { null }
         )
 
-        val success = if (state.isEditing) {
-            MockDataRepository.updatePet(pet)
-        } else {
-            MockDataRepository.addPet(pet)
-            true
+        viewModelScope.launch {
+            try {
+                if (state.isEditing) {
+                    repository.updatePet(pet)
+                } else {
+                    repository.insertPet(pet)
+                }
+
+                // Log de creación/actualización
+                ActivityLogger.logCrud(
+                    screen = ActivityLogger.Screens.PET_FORM,
+                    action = if (state.isEditing) ActivityLogger.Actions.UPDATE else ActivityLogger.Actions.CREATE,
+                    entityType = ActivityLogger.EntityTypes.PET,
+                    entityId = pet.id,
+                    entityName = pet.name
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveSuccess = true
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveSuccess = false,
+                    error = "Error al guardar: ${e.message}"
+                )
+            }
         }
 
-        // Log de creación/actualización
-        if (success) {
-            ActivityLogger.logCrud(
-                screen = ActivityLogger.Screens.PET_FORM,
-                action = if (state.isEditing) ActivityLogger.Actions.UPDATE else ActivityLogger.Actions.CREATE,
-                entityType = ActivityLogger.EntityTypes.PET,
-                entityId = pet.id,
-                entityName = pet.name
-            )
-        }
-
-        _uiState.value = _uiState.value.copy(
-            isSaving = false,
-            saveSuccess = success,
-            error = if (!success) "Error al guardar" else null
-        )
-
-        return success
+        return true
     }
 
     fun resetState() {
