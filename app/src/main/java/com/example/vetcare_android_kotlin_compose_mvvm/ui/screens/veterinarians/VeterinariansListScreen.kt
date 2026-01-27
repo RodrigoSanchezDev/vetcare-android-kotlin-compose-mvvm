@@ -18,7 +18,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.components.*
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.theme.*
 import java.time.format.DateTimeFormatter
@@ -372,8 +371,8 @@ private fun VetListItem(
                     color = VetCareColors.MutedText
                 )
 
-                vetWithStats.upcomingAppointments.forEach { appointment ->
-                    val pet = MockDataRepository.getPetById(appointment.petId)
+                vetWithStats.upcomingAppointments.forEach { appointmentWithPet ->
+                    val pet = appointmentWithPet.pet
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -396,7 +395,7 @@ private fun VetListItem(
                             )
                         }
                         Text(
-                            text = appointment.dateTime.format(dateFormatter),
+                            text = appointmentWithPet.appointment.dateTime.format(dateFormatter),
                             style = MaterialTheme.typography.labelSmall,
                             color = VetCareColors.MutedText
                         )

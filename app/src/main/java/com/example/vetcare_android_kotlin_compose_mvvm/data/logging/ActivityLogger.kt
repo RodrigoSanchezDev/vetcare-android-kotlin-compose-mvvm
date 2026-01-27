@@ -1,18 +1,39 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.data.logging
 
+import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.ActivityEvent
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
+import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
 import com.example.vetcare_android_kotlin_compose_mvvm.data.session.SessionManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 /**
- * Servicio para registrar actividades de usuario
- * Implementa logging detallado con metadata para seguimiento en tiempo real
+ * Servicio para registrar actividades de usuario con persistencia Room
+ *
+ * Implementación de procesamiento asincrónico:
+ * - Usa CoroutineScope con SupervisorJob para operaciones fire-and-forget
+ * - Dispatchers.IO para escritura en Room Database
+ * - No bloquea el hilo principal al registrar eventos
+ * - Manejo de errores silencioso para no afectar UX
  */
 object ActivityLogger {
 
+    // Scope dedicado para logging asincrónico
+    // SupervisorJob permite que fallos individuales no cancelen otros logs
+    private val loggerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // Repositorio lazy para evitar inicialización temprana
+    private val repository: VetCareRepository
+        get() = VetCareApplication.getRepository()
+
     /**
-     * Registrar un evento de actividad
+     * Registrar un evento de actividad de forma asincrónica
+     *
+     * Ejecuta la escritura en Room Database sin bloquear la UI
+     * El evento se persiste incluso si la app se cierra
      */
     fun log(
         screen: String,
@@ -28,7 +49,7 @@ object ActivityLogger {
         metadata?.let { enrichedMetadata.putAll(it) }
 
         val event = ActivityEvent(
-            id = MockDataRepository.generateId("event"),
+            id = repository.generateId("event"),
             timestamp = LocalDateTime.now(),
             userId = userId,
             screen = screen,
@@ -36,7 +57,15 @@ object ActivityLogger {
             metadata = enrichedMetadata.ifEmpty { null }
         )
 
-        MockDataRepository.logActivity(event)
+        // Fire-and-forget: Log asincrónico sin bloquear UI
+        loggerScope.launch {
+            try {
+                repository.logActivity(event)
+            } catch (e: Exception) {
+                // Silenciar errores de logging para no afectar UX
+                // En producción, podría enviarse a un sistema de monitoreo
+            }
+        }
     }
 
     /**

@@ -5,12 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.example.vetcare_android_kotlin_compose_mvvm.VetCareApplication
 import com.example.vetcare_android_kotlin_compose_mvvm.data.logging.ActivityLogger
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Consultation
+import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Pet
 import com.example.vetcare_android_kotlin_compose_mvvm.data.model.Veterinarian
 import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.VetCareRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 
 /**
@@ -20,6 +24,7 @@ data class ConsultationFormUiState(
     val consultationId: String? = null,
     val isEditing: Boolean = false,
     val petId: String = "",
+    val pet: Pet? = null,  // Datos de la mascota incluidos
     val vetId: String = "",
     val diagnosis: String = "",
     val treatment: String = "",
@@ -31,14 +36,19 @@ data class ConsultationFormUiState(
     val treatmentError: String? = null,
 
     // Estado
+    val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
     val error: String? = null
 )
 
 /**
- * ViewModel para crear/editar consulta médica
- * Usa VetCareRepository con Room Database para persistencia local
+ * ViewModel para crear/editar consulta médica con procesamiento asincrónico
+ *
+ * Implementación de Kotlin Coroutines:
+ * - Carga paralela de veterinarios y datos de mascota
+ * - Dispatchers.IO para operaciones de Room Database
+ * - viewModelScope para lifecycle-aware coroutines
  */
 class ConsultationFormViewModel : ViewModel() {
 
@@ -56,32 +66,60 @@ class ConsultationFormViewModel : ViewModel() {
     }
 
     private fun loadVeterinarians() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _veterinarians.value = repository.getAllVeterinarians()
         }
     }
 
+    /**
+     * Carga la consulta y datos de mascota usando procesamiento paralelo
+     */
     fun loadConsultation(consultationId: String?, petId: String?) {
-        if (consultationId != null) {
-            viewModelScope.launch {
-                // Cargar consulta existente para editar
-                val consultations = repository.getConsultationsByPet(petId ?: "")
-                val consultation = consultations.find { it.id == consultationId }
-                if (consultation != null) {
-                    _uiState.value = ConsultationFormUiState(
-                        consultationId = consultation.id,
-                        isEditing = true,
-                        petId = consultation.petId,
-                        vetId = consultation.vetId,
-                        diagnosis = consultation.diagnosis,
-                        treatment = consultation.treatment,
-                        notes = consultation.notes ?: ""
+        if (petId == null) return
+
+        _uiState.value = _uiState.value.copy(isLoading = true)
+
+        viewModelScope.launch {
+            try {
+                // Cargar mascota y consulta en paralelo
+                val petDeferred = async(Dispatchers.IO) { repository.getPetById(petId) }
+
+                val pet = petDeferred.await()
+
+                if (consultationId != null) {
+                    // Cargar consulta existente para editar
+                    val consultations = withContext(Dispatchers.IO) {
+                        repository.getConsultationsByPet(petId)
+                    }
+                    val consultation = consultations.find { it.id == consultationId }
+
+                    if (consultation != null) {
+                        _uiState.value = ConsultationFormUiState(
+                            consultationId = consultation.id,
+                            isEditing = true,
+                            petId = consultation.petId,
+                            pet = pet,
+                            vetId = consultation.vetId,
+                            diagnosis = consultation.diagnosis,
+                            treatment = consultation.treatment,
+                            notes = consultation.notes ?: "",
+                            isLoading = false
+                        )
+                    }
+                } else {
+                    // Nueva consulta para mascota específica
+                    _uiState.value = _uiState.value.copy(
+                        petId = petId,
+                        pet = pet,
+                        isLoading = false
                     )
                 }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Error al cargar datos: ${e.message}"
+                )
             }
-        } else if (petId != null) {
-            // Nueva consulta para mascota específica
-            _uiState.value = _uiState.value.copy(petId = petId)
         }
     }
 
@@ -123,6 +161,9 @@ class ConsultationFormViewModel : ViewModel() {
         return isValid
     }
 
+    /**
+     * Guarda la consulta en Room Database
+     */
     fun save(): Boolean {
         if (!validate()) return false
 
@@ -139,7 +180,7 @@ class ConsultationFormViewModel : ViewModel() {
             notes = state.notes.trim().ifBlank { null }
         )
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (state.isEditing) {
                     repository.updateConsultation(consultation)

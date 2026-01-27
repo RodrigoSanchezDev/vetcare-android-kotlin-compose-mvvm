@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.vetcare_android_kotlin_compose_mvvm.data.repository.MockDataRepository
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.components.*
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.theme.*
 
@@ -31,7 +30,8 @@ fun ConsultationFormScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showVetDropdown by remember { mutableStateOf(false) }
 
-    val pet = MockDataRepository.getPetById(petId)
+    // Los datos de mascota ahora vienen del ViewModel
+    val pet = uiState.pet
 
     LaunchedEffect(consultationId, petId) {
         viewModel.loadConsultation(consultationId, petId)
@@ -58,48 +58,59 @@ fun ConsultationFormScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(VetCareColors.Background)
-                .padding(paddingValues),
-            contentPadding = PaddingValues(VetCareSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(VetCareSpacing.md)
-        ) {
-            // Info de la mascota
-            item {
-                PremiumCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(VetCareSpacing.md)
-                    ) {
-                        Icon(
-                            Icons.Default.Pets,
-                            contentDescription = null,
-                            tint = VetCareColors.Primary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Column {
-                            Text(
-                                text = "Paciente",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = VetCareColors.MutedText
+        // Mostrar loading si está cargando
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                CircularProgressIndicator(color = VetCareColors.Primary)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(VetCareColors.Background)
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(VetCareSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(VetCareSpacing.md)
+            ) {
+                // Info de la mascota
+                item {
+                    PremiumCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(VetCareSpacing.md)
+                        ) {
+                            Icon(
+                                Icons.Default.Pets,
+                                contentDescription = null,
+                                tint = VetCareColors.Primary,
+                                modifier = Modifier.size(32.dp)
                             )
-                            Text(
-                                text = pet?.name ?: "Mascota",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = VetCareColors.OnSurface
-                            )
-                            if (pet != null) {
+                            Column {
                                 Text(
-                                    text = "${pet.species.displayName} • ${pet.breed ?: "Sin raza"}",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    text = "Paciente",
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = VetCareColors.MutedText
                                 )
+                                Text(
+                                    text = pet?.name ?: "Mascota",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = VetCareColors.OnSurface
+                                )
+                                if (pet != null) {
+                                    Text(
+                                        text = "${pet.species.displayName} • ${pet.breed ?: "Sin raza"}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = VetCareColors.MutedText
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
             // Selección de veterinario
             item {
@@ -305,8 +316,9 @@ fun ConsultationFormScreen(
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(VetCareSpacing.xxl))
+                item {
+                    Spacer(modifier = Modifier.height(VetCareSpacing.xxl))
+                }
             }
         }
     }

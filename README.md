@@ -94,6 +94,10 @@
 ✅ Sistema de logging para auditoría
 ✅ Búsqueda con debounce optimizado (300ms)
 ✅ Localización completa en Español (ES-CL)
+✅ Procesamiento asincrónico con Kotlin Coroutines
+✅ Carga paralela de datos con async/await
+✅ Dispatchers optimizados (IO, Default, Main)
+✅ Pull-to-refresh sin bloqueo de UI
 ```
 
 ---
@@ -129,7 +133,16 @@
 |------------|-----------|
 | Navigation Compose | Navegación entre pantallas |
 | WorkManager | Programación de notificaciones |
-| Coroutines | Operaciones asíncronas |
+| Kotlin Coroutines | Procesamiento asincrónico optimizado |
+
+### Procesamiento Asincrónico
+| Componente | Propósito |
+|------------|-----------|
+| viewModelScope | Coroutines lifecycle-aware |
+| Dispatchers.IO | Operaciones de base de datos |
+| Dispatchers.Default | Procesamiento CPU-intensive |
+| async/await | Carga paralela de datos |
+| Flow | Streams reactivos de Room |
 
 </div>
 
@@ -182,6 +195,70 @@ La aplicación utiliza **Room Database** como capa de abstracción sobre SQLite,
 - **Type Safety**: Verificación en tiempo de compilación de consultas SQL
 - **Reactive Streams**: Integración nativa con Kotlin Coroutines y Flow
 - **Migrations**: Soporte para actualizaciones de esquema de base de datos
+
+### Optimización de Rendimiento con Kotlin Coroutines
+
+La aplicación implementa procesamiento asincrónico avanzado para garantizar una experiencia de usuario fluida sin bloqueos ni congelamientos.
+
+#### Estrategia de Dispatchers
+
+```kotlin
+// Operaciones de Base de Datos → Dispatchers.IO
+val pet = withContext(Dispatchers.IO) {
+    repository.getPetById(petId)
+}
+
+// Procesamiento de listas → Dispatchers.Default
+val filteredList = withContext(Dispatchers.Default) {
+    appointments.filter { it.dateTime.isAfter(now) }.sortedBy { it.dateTime }
+}
+
+// Actualizaciones de UI → Dispatchers.Main (automático en viewModelScope)
+_uiState.value = newState
+```
+
+#### Carga Paralela con async/await
+
+```kotlin
+// Antes: Carga secuencial (~400ms con 4 operaciones de 100ms)
+val owner = repository.getOwnerById(ownerId)      // 100ms
+val consultations = repository.getConsultations() // 100ms  
+val appointments = repository.getAppointments()   // 100ms
+val vaccines = repository.getVaccines()           // 100ms
+
+// Después: Carga paralela (~100ms total)
+val ownerDeferred = async(Dispatchers.IO) { repository.getOwnerById(ownerId) }
+val consultationsDeferred = async(Dispatchers.IO) { repository.getConsultations() }
+val appointmentsDeferred = async(Dispatchers.IO) { repository.getAppointments() }
+val vaccinesDeferred = async(Dispatchers.IO) { repository.getVaccines() }
+
+// Todas las operaciones ejecutan simultáneamente
+val owner = ownerDeferred.await()
+val consultations = consultationsDeferred.await()
+```
+
+#### Flujos Optimizados
+
+| Pantalla | Optimización Implementada |
+|----------|---------------------------|
+| **PetDetailScreen** | Carga paralela de owner, consultas, citas y vacunas |
+| **AdminDashboard** | Cálculo de estadísticas en parallel con async/await |
+| **VeterinariansScreen** | Carga paralela de estadísticas por veterinario |
+| **ActivityLog** | Flow reactivo con procesamiento en Default dispatcher |
+| **Formularios** | Guardado asincrónico sin bloqueo de UI |
+
+#### Comparación: Coroutines vs RxJava
+
+| Aspecto | Kotlin Coroutines | RxJava |
+|---------|-------------------|--------|
+| **Sintaxis** | Código secuencial natural | Cadenas de operadores |
+| **Curva de aprendizaje** | Más suave | Más pronunciada |
+| **Integración Jetpack** | Nativa (viewModelScope) | Requiere adaptadores |
+| **Manejo de errores** | try/catch estándar | Operadores específicos |
+| **Tamaño de dependencia** | Incluido en Kotlin | Biblioteca adicional |
+| **Cancelación** | Structured concurrency | Disposables manuales |
+
+**Decisión**: Se eligió Kotlin Coroutines por su integración nativa con Jetpack Compose, Room y ViewModel, además de proporcionar código más legible y mantenible.
 
 ---
 
@@ -574,6 +651,15 @@ graph TD
 - [x] Accesibilidad (Alto contraste, TalkBack, reducir animaciones)
 - [x] **Persistencia local con Room Database (SQLite)**
 - [x] **Operaciones offline sin conexión a internet**
+
+### Versión 1.1 ✅ (Optimización de Rendimiento)
+- [x] Procesamiento asincrónico con Kotlin Coroutines
+- [x] Carga paralela de datos con async/await
+- [x] Dispatchers optimizados (IO para BD, Default para CPU)
+- [x] Pull-to-refresh sin bloqueo de UI
+- [x] Debounce en búsquedas (300ms)
+- [x] Fire-and-forget para logging de actividad
+- [x] Flow reactivo desde Room Database
 
 ### Versión 2.0 🔜
 - [ ] Integración con backend REST API
