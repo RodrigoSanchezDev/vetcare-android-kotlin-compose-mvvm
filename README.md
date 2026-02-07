@@ -4,11 +4,11 @@
   <img alt="VetCare Header" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,14,16,18,20&height=180&section=header&text=VetCare&fontSize=80&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Sistema%20de%20Gestión%20Veterinaria&descSize=20&descAlignY=55" width="100%">
 </picture>
 
-<div align="center">
+<div align="center">    
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.09-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![Room](https://img.shields.io/badge/Room-2.6.1-4285F4?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/training/data-storage/room)
+[![Room](https://img.shields.io/badge/Room-2.7.0-4285F4?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/training/data-storage/room)
 [![Material 3](https://img.shields.io/badge/Material%203-Design-757575?style=for-the-badge&logo=materialdesign&logoColor=white)](https://m3.material.io/)
 [![Android](https://img.shields.io/badge/Android-API%2026+-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Architecture](https://img.shields.io/badge/Architecture-MVVM-FF6F00?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/topic/architecture)
@@ -33,6 +33,7 @@
 - [Configuración](#-configuración)
 - [Demo](#-demo)
 - [Módulos del Sistema](#-módulos-del-sistema)
+- [Debug & Profiling](#-debug--profiling)
 - [Accesibilidad y Temas](#-accesibilidad)
 - [Flujo de Usuario](#-flujo-de-usuario)
 - [Roadmap](#-roadmap)
@@ -70,6 +71,7 @@
 | 📊 **Dashboard Admin** | Métricas en tiempo real, accesos rápidos |
 | 💾 **Persistencia Local** | Room Database (SQLite), datos offline, sincronización automática |
 | 📝 **Registro de Actividad** | Auditoría completa de acciones del sistema |
+| 🔍 **Debug & Profiling** | Diagnóstico, métricas de rendimiento, manejo de errores |
 | 🎨 **Temas y Apariencia** | Modo Claro, Oscuro y Automático (según sistema) |
 | ♿ **Accesibilidad** | Alto contraste, reducción de animaciones, TalkBack |
 | 🎯 **UI/UX Premium** | Material 3, animaciones fluidas, diseño adaptativo |
@@ -90,8 +92,11 @@
 ✅ Soporte de accesibilidad (TalkBack, alto contraste)
 ✅ Componentes UI reutilizables
 ✅ Validación de formularios en tiempo real
-✅ Manejo centralizado de errores
-✅ Sistema de logging para auditoría
+✅ Manejo estructurado de excepciones con try-catch
+✅ Sistema de logging avanzado con tags personalizados
+✅ Excepciones personalizadas del dominio
+✅ Métricas de rendimiento en tiempo real
+✅ Herramientas de diagnóstico y profiling
 ✅ Búsqueda con debounce optimizado (300ms)
 ✅ Localización completa en Español (ES-CL)
 ✅ Procesamiento asincrónico con Kotlin Coroutines
@@ -116,9 +121,9 @@
 ### Persistencia de Datos
 | Tecnología | Versión | Propósito |
 |------------|---------|-----------|
-| ![Room](https://img.shields.io/badge/Room-4285F4?style=flat-square&logo=android&logoColor=white) | 2.6.1 | Base de datos SQLite |
+| ![Room](https://img.shields.io/badge/Room-4285F4?style=flat-square&logo=android&logoColor=white) | 2.7.0 | Base de datos SQLite |
 | SharedPreferences | - | Configuración de usuario |
-| KSP | 2.0.21-1.0.25 | Procesador de anotaciones |
+| KSP | 2.0.21-1.0.28 | Procesador de anotaciones |
 
 ### Arquitectura & Datos
 | Tecnología | Propósito |
@@ -316,6 +321,12 @@ app/
 │   │   │   │
 │   │   │   └── session/
 │   │   │       └── SessionManager.kt        # Gestión de sesión
+│   │   │
+│   │   ├── debug/                           # Herramientas de Debug & Profiling
+│   │   │   ├── DebugLogger.kt               # Sistema de logging avanzado
+│   │   │   ├── VetCareExceptions.kt         # Excepciones personalizadas
+│   │   │   ├── DebugPetDetailViewModel.kt   # ViewModel con métricas
+│   │   │   └── DebugProfilingScreen.kt      # Pantalla de diagnóstico
 │   │   │
 │   │   ├── notifications/
 │   │   │   ├── ReminderScheduler.kt         # Programador de recordatorios
@@ -560,6 +571,55 @@ VetCare está diseñado siguiendo las pautas de accesibilidad de Android para ga
 - Exportación de registros
 - Visualización para auditoría
 
+### 🔍 Debug & Profiling
+
+Módulo completo de herramientas de diagnóstico y monitoreo de rendimiento, accesible desde **Configuración → Desarrollo → Debug & Profiling**.
+
+#### Sistema de Logging Avanzado
+
+| Tag | Propósito |
+|-----|-----------|
+| `VETCARE_DEBUG` | Logs generales de debugging |
+| `VETCARE_PERF` | Métricas de rendimiento |
+| `VETCARE_ERROR` | Errores y excepciones |
+| `VETCARE_DB` | Operaciones de base de datos |
+| `VETCARE_COROUTINE` | Flujos de coroutines |
+| `VETCARE_VIEWMODEL` | Operaciones del ViewModel |
+
+#### Niveles de Log
+
+| Nivel | Uso |
+|-------|-----|
+| 🔍 DEBUG | Información detallada de desarrollo |
+| ℹ️ INFO | Eventos importantes del flujo normal |
+| ⚠️ WARN | Situaciones potencialmente problemáticas |
+| ❌ ERROR | Errores que no detienen la ejecución |
+| 💀 FATAL | Errores críticos |
+
+#### Excepciones Personalizadas
+
+```kotlin
+VetCareException (base)
+├── DatabaseException         // Errores de Room Database
+├── EntityNotFoundException   // Entidad no encontrada
+├── TimeoutException          // Operación excedió tiempo límite
+├── ValidationException       // Error de validación
+├── AuthenticationException   // Error de autenticación
+├── SessionException          // Sesión expirada
+└── BusinessLogicException    // Error de lógica de negocio
+```
+
+#### Métricas de Rendimiento
+
+La pantalla de Debug & Profiling permite:
+
+- **Ejecutar flujos críticos** con medición de tiempo
+- **Visualizar métricas** de cada operación de BD
+- **Comparar rendimiento** paralelo vs secuencial
+- **Detectar operaciones lentas** (>500ms)
+- **Monitorear uso de memoria**
+- **Simular errores** para probar el manejo de excepciones
+
 ### 💾 Base de Datos Local (Room)
 
 La aplicación implementa persistencia local completa utilizando **Room Database**, permitiendo operaciones sin conexión a internet.
@@ -603,7 +663,7 @@ La aplicación implementa persistencia local completa utilizando **Room Database
 
 | Característica | Implementación |
 |----------------|----------------|
-| **Base de datos** | SQLite via Room 2.6.1 |
+| **Base de datos** | SQLite via Room 2.7.0 |
 | **Operaciones** | CRUD completo (Create, Read, Update, Delete) |
 | **Relaciones** | Foreign Keys con CASCADE delete |
 | **Tipos complejos** | TypeConverters para LocalDateTime y Enums |
@@ -625,10 +685,15 @@ graph TD
     D --> G[Gestión Citas]
     D --> H[Staff Veterinario]
     D --> I[Activity Log]
+    D --> P[Configuración]
     
     E --> J[Mis Mascotas]
     E --> K[Mis Citas]
     E --> L[Descubrir]
+    E --> Q[Configuración]
+    
+    P --> R[Debug & Profiling]
+    Q --> R
     
     F --> M[CRUD Mascotas]
     G --> N[CRUD Citas]
@@ -660,6 +725,15 @@ graph TD
 - [x] Debounce en búsquedas (300ms)
 - [x] Fire-and-forget para logging de actividad
 - [x] Flow reactivo desde Room Database
+
+### Versión 1.2 ✅ (Debug & Profiling)
+- [x] Sistema de logging avanzado con tags personalizados
+- [x] Excepciones personalizadas del dominio (VetCareExceptions)
+- [x] Herramientas de Debug & Profiling integradas
+- [x] Métricas de rendimiento en tiempo real
+- [x] Manejo estructurado de errores (try-catch)
+- [x] Simulación de errores para testing
+- [x] Actualización a Room 2.7.0
 
 ### Versión 2.0 🔜
 - [ ] Integración con backend REST API

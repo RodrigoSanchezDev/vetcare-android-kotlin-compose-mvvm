@@ -1,10 +1,14 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.notifications
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.example.vetcare_android_kotlin_compose_mvvm.R
 
 /**
@@ -19,40 +23,53 @@ object NotificationHelper {
     private const val CHANNEL_VACCINES_NAME = "Vacunas"
 
     /**
+     * Verifica si la app tiene permiso para mostrar notificaciones
+     */
+    fun hasNotificationPermission(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Permisos no requeridos en versiones anteriores a Android 13
+        }
+    }
+
+    /**
      * Crear canales de notificación (llamar en Application o MainActivity)
      */
     fun createNotificationChannels(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            // Canal de citas
-            val appointmentsChannel = NotificationChannel(
-                CHANNEL_APPOINTMENTS,
-                CHANNEL_APPOINTMENTS_NAME,
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Recordatorios de citas veterinarias"
-                enableVibration(true)
-            }
-
-            // Canal de vacunas
-            val vaccinesChannel = NotificationChannel(
-                CHANNEL_VACCINES,
-                CHANNEL_VACCINES_NAME,
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Recordatorios de vacunas próximas"
-                enableVibration(true)
-            }
-
-            notificationManager.createNotificationChannel(appointmentsChannel)
-            notificationManager.createNotificationChannel(vaccinesChannel)
+        // Canal de citas
+        val appointmentsChannel = NotificationChannel(
+            CHANNEL_APPOINTMENTS,
+            CHANNEL_APPOINTMENTS_NAME,
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Recordatorios de citas veterinarias"
+            enableVibration(true)
         }
+
+        // Canal de vacunas
+        val vaccinesChannel = NotificationChannel(
+            CHANNEL_VACCINES,
+            CHANNEL_VACCINES_NAME,
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Recordatorios de vacunas próximas"
+            enableVibration(true)
+        }
+
+        notificationManager.createNotificationChannel(appointmentsChannel)
+        notificationManager.createNotificationChannel(vaccinesChannel)
     }
 
     /**
      * Mostrar notificación de cita
      */
+    @SuppressLint("MissingPermission")
     fun showAppointmentNotification(
         context: Context,
         notificationId: Int,
@@ -60,6 +77,11 @@ object NotificationHelper {
         vetName: String,
         dateTime: String
     ) {
+        // Verificar permiso antes de mostrar notificación
+        if (!hasNotificationPermission(context)) {
+            return
+        }
+
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val notification = NotificationCompat.Builder(context, CHANNEL_APPOINTMENTS)
@@ -78,6 +100,7 @@ object NotificationHelper {
     /**
      * Mostrar notificación de vacuna
      */
+    @SuppressLint("MissingPermission")
     fun showVaccineNotification(
         context: Context,
         notificationId: Int,
@@ -85,6 +108,11 @@ object NotificationHelper {
         vaccineName: String,
         daysUntil: Int
     ) {
+        // Verificar permiso antes de mostrar notificación
+        if (!hasNotificationPermission(context)) {
+            return
+        }
+
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val daysText = when {

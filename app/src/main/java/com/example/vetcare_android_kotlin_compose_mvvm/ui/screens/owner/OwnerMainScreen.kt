@@ -22,6 +22,7 @@ import com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.discover.Disco
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.pets.PetDetailScreen
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.pets.PetsListScreen
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.settings.SettingsScreen
+import com.example.vetcare_android_kotlin_compose_mvvm.debug.DebugProfilingScreen
 
 /**
  * Contenedor principal para el flujo de Owner con Bottom Navigation
@@ -96,7 +97,19 @@ fun OwnerMainScreen(
                         ReminderScheduler.cancelAllReminders(context)
                         // Ejecutar logout
                         onLogout()
+                    },
+                    onNavigateToDebug = {
+                        navController.navigate(NavRoutes.DebugProfiling.route)
                     }
+                )
+            }
+
+            // ========================================
+            // DEBUG & PROFILING
+            // ========================================
+            composable(NavRoutes.DebugProfiling.route) {
+                DebugProfilingScreen(
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 

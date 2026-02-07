@@ -36,7 +36,8 @@ import com.example.vetcare_android_kotlin_compose_mvvm.ui.theme.*
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToDebug: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val repository = remember { ThemeSettingsRepository.getInstance(context) }
@@ -358,6 +359,24 @@ fun SettingsScreen(
                             title = stringResource(R.string.settings_about),
                             subtitle = stringResource(R.string.settings_version),
                             onClick = { /* TODO */ }
+                        )
+                    }
+                }
+            }
+
+            // Sección Desarrollo
+            item {
+                SettingsSectionHeader(title = "🔧 Desarrollo")
+            }
+
+            item {
+                PremiumCard(modifier = Modifier.fillMaxWidth()) {
+                    Column {
+                        SettingsItem(
+                            icon = Icons.Default.BugReport,
+                            title = "Debug & Profiling",
+                            subtitle = "Herramientas de diagnóstico y optimización",
+                            onClick = onNavigateToDebug
                         )
                     }
                 }

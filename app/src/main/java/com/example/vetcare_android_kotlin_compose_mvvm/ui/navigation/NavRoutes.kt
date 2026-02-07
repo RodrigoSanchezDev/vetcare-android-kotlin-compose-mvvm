@@ -43,6 +43,9 @@ sealed class NavRoutes(val route: String) {
     object VetAgenda : NavRoutes("vet/agenda/{vetId}") {
         fun createRoute(vetId: String) = "vet/agenda/$vetId"
     }
+
+    // Debug & Profiling
+    object DebugProfiling : NavRoutes("debug/profiling")
 }
 
 /**

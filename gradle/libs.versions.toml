@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.2"
+agp = "9.0.0"
 kotlin = "2.0.21"
 coreKtx = "1.12.0"
 junit = "4.13.2"
@@ -14,8 +14,8 @@ workRuntime = "2.9.0"
 coroutines = "1.7.3"
 materialIconsExtended = "1.6.1"
 # Room Database
-room = "2.6.1"
-ksp = "2.0.21-1.0.25"
+room = "2.7.0"
+ksp = "2.0.21-1.0.28"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
