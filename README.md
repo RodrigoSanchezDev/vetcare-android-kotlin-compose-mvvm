@@ -34,6 +34,7 @@
 - [Demo](#-demo)
 - [Módulos del Sistema](#-módulos-del-sistema)
 - [Debug & Profiling](#-debug--profiling)
+- [Análisis de Memoria](#análisis-de-memoria-y-detección-de-memory-leaks)
 - [Accesibilidad y Temas](#-accesibilidad)
 - [Flujo de Usuario](#-flujo-de-usuario)
 - [Roadmap](#-roadmap)
@@ -72,6 +73,7 @@
 | 💾 **Persistencia Local** | Room Database (SQLite), datos offline, sincronización automática |
 | 📝 **Registro de Actividad** | Auditoría completa de acciones del sistema |
 | 🔍 **Debug & Profiling** | Diagnóstico, métricas de rendimiento, manejo de errores |
+| 🧠 **Memory Profiling** | LeakCanary, análisis de heap, detección de memory leaks |
 | 🎨 **Temas y Apariencia** | Modo Claro, Oscuro y Automático (según sistema) |
 | ♿ **Accesibilidad** | Alto contraste, reducción de animaciones, TalkBack |
 | 🎯 **UI/UX Premium** | Material 3, animaciones fluidas, diseño adaptativo |
@@ -97,6 +99,8 @@
 ✅ Excepciones personalizadas del dominio
 ✅ Métricas de rendimiento en tiempo real
 ✅ Herramientas de diagnóstico y profiling
+✅ Detección de memory leaks con LeakCanary
+✅ Análisis de memoria con Android Profiler
 ✅ Búsqueda con debounce optimizado (300ms)
 ✅ Localización completa en Español (ES-CL)
 ✅ Procesamiento asincrónico con Kotlin Coroutines
@@ -148,6 +152,12 @@
 | Dispatchers.Default | Procesamiento CPU-intensive |
 | async/await | Carga paralela de datos |
 | Flow | Streams reactivos de Room |
+
+### Testing & Profiling
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| ![LeakCanary](https://img.shields.io/badge/LeakCanary-FFDC00?style=flat-square&logo=android&logoColor=black) | 2.14 | Detección de memory leaks |
+| Android Profiler | - | Análisis de heap y memoria |
 
 </div>
 
@@ -620,6 +630,76 @@ La pantalla de Debug & Profiling permite:
 - **Monitorear uso de memoria**
 - **Simular errores** para probar el manejo de excepciones
 
+#### Análisis de Memoria y Detección de Memory Leaks
+
+La aplicación ha sido sometida a un diagnóstico exhaustivo de gestión de memoria utilizando herramientas profesionales de profiling.
+
+##### Android Profiler - Análisis de Heap
+
+| Métrica | Valor | Estado |
+|---------|-------|--------|
+| **Total Memory** | 156.1 MB | ✅ Normal |
+| **Java Heap** | 16.7 MB | ✅ Óptimo |
+| **Native Memory** | 19.8 MB | ✅ Normal |
+| **Objects in Memory** | 118,228 | ✅ Controlado |
+| **Retained Size** | ~2.7 MB | ✅ Saludable |
+| **Leaks Detected** | 0 | ✅ Sin fugas |
+| **Duplicates** | 0 | ✅ Sin duplicados |
+
+<div align="center">
+
+| Heap Dump Analysis | Live Memory Monitoring |
+|:------------------:|:----------------------:|
+| ![Profiler](docs/screenshots/profiler.png) | ![Live Memory](docs/screenshots/live_memory.png) |
+
+</div>
+
+**Observaciones técnicas:**
+- El gráfico de memoria presenta comportamiento **estable** sin patrones de "escalera" (memoria que incrementa sin liberarse)
+- No se detectó **fragmentación de heap** ni **allocations excesivas** durante la navegación
+- El **Garbage Collector (GC)** ejecuta ciclos de recolección normales sin pausas prolongadas
+- Las clases con mayor consumo (`EmojiCompat`: 353 KB, `Bitmap`: 211 KB) están dentro de rangos normales para aplicaciones con UI
+
+##### LeakCanary - Detección Automatizada
+
+Se integró **LeakCanary v2.14** como dependencia de debug para detección automática de fugas de memoria:
+
+```kotlin
+// app/build.gradle.kts
+debugImplementation(libs.leakcanary.android)
+```
+
+<div align="center">
+
+| LeakCanary Monitoring |
+|:---------------------:|
+| ![LeakCanary](docs/screenshots/LeakCanary.png) |
+
+</div>
+
+**Flujos de prueba ejecutados:**
+- Navegación repetitiva: Dashboard → Mascotas → Detalle → Back (×10 iteraciones)
+- Rotación de pantalla en múltiples Activities
+- Apertura/cierre de diálogos y BottomSheets
+- Ejecución de operaciones asíncronas con coroutines
+- Destrucción de Activities y Fragments mediante navegación hacia atrás
+
+**Resultado del análisis:** Los logs de LeakCanary (`tag:LeakCanary`) no reportaron instancias de `APPLICATION LEAK` ni `ACTIVITY LEAK`, confirmando:
+
+| Componente | Estado | Verificación |
+|------------|--------|--------------|
+| **ViewModels** | ✅ Correcto | Se liberan al invocar `onCleared()` |
+| **Coroutines** | ✅ Correcto | Cancelación automática con `viewModelScope` |
+| **Context References** | ✅ Correcto | Sin referencias estáticas a Activity/Fragment |
+| **Listeners/Callbacks** | ✅ Correcto | Desuscripción automática con lifecycle-aware pattern |
+| **Compose Functions** | ✅ Correcto | Uso adecuado de `remember` y `DisposableEffect` |
+
+##### Conclusión del Análisis de Memoria
+
+> La arquitectura **MVVM** implementada con **Jetpack Compose**, **StateFlow** y **viewModelScope** proporciona un manejo de ciclo de vida robusto que previene las fugas de memoria comunes en aplicaciones Android. Los componentes se liberan correctamente cuando salen del scope de composición o cuando las Activities/Fragments son destruidos.
+>
+> **Estado: ✅ Gestión de memoria óptima - Sin anomalías detectadas**
+
 ### 💾 Base de Datos Local (Room)
 
 La aplicación implementa persistencia local completa utilizando **Room Database**, permitiendo operaciones sin conexión a internet.
@@ -734,6 +814,14 @@ graph TD
 - [x] Manejo estructurado de errores (try-catch)
 - [x] Simulación de errores para testing
 - [x] Actualización a Room 2.7.0
+
+### Versión 1.3 ✅ (Memory Profiling & Optimization)
+- [x] Integración de LeakCanary v2.14 para detección de memory leaks
+- [x] Análisis exhaustivo con Android Profiler (heap dump, allocations, GC)
+- [x] Validación de gestión de memoria en flujos críticos
+- [x] Verificación de liberación correcta de ViewModels y Coroutines
+- [x] Confirmación de ausencia de referencias estáticas indebidas
+- [x] Documentación de métricas de memoria y resultados de análisis
 
 ### Versión 2.0 🔜
 - [ ] Integración con backend REST API

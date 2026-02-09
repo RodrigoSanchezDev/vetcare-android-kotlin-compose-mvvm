@@ -78,4 +78,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // LeakCanary - Detección de Memory Leaks (solo en debug)
+    debugImplementation(libs.leakcanary.android)
 }

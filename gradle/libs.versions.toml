@@ -16,6 +16,8 @@ materialIconsExtended = "1.6.1"
 # Room Database
 room = "2.7.0"
 ksp = "2.0.21-1.0.28"
+# LeakCanary - Detección de Memory Leaks
+leakcanary = "2.14"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +43,8 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+# LeakCanary - Memory Leak Detection
+leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

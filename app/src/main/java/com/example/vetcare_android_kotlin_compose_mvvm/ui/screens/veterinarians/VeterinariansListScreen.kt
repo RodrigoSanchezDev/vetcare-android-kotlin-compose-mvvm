@@ -1,5 +1,6 @@
 package com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.veterinarians
 
+import android.content.res.Resources
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -252,7 +254,13 @@ private fun VetListItem(
                         .background(VetCareColors.Primary.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (vet.avatarRes != null) {
+                    // Verificar si el recurso es válido antes de usarlo
+                    val context = LocalContext.current
+                    val isValidResource = remember(vet.avatarRes) {
+                        vet.avatarRes != null && isDrawableResource(context.resources, vet.avatarRes)
+                    }
+
+                    if (isValidResource && vet.avatarRes != null) {
                         Image(
                             painter = painterResource(id = vet.avatarRes),
                             contentDescription = vet.name,
@@ -444,6 +452,20 @@ private fun StatChip(
 private fun VeterinariansListScreenPreview() {
     VetCareTheme {
         VeterinariansListScreen()
+    }
+}
+
+/**
+ * Verifica si un ID de recurso es un drawable válido
+ * Esto previene crashes cuando los IDs de recursos guardados en BD
+ * ya no corresponden a recursos válidos (por cambios entre compilaciones)
+ */
+private fun isDrawableResource(resources: Resources, resId: Int): Boolean {
+    return try {
+        val typeName = resources.getResourceTypeName(resId)
+        typeName == "drawable" || typeName == "mipmap"
+    } catch (e: Resources.NotFoundException) {
+        false
     }
 }
 

@@ -184,6 +184,7 @@ fun DebugProfilingScreen(
                 }
             }
 
+
             item { Spacer(modifier = Modifier.height(VetCareSpacing.xl)) }
         }
     }
