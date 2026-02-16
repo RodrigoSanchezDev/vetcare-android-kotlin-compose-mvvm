@@ -144,6 +144,13 @@
 | WorkManager | Programación de notificaciones |
 | Kotlin Coroutines | Procesamiento asincrónico optimizado |
 
+### Networking & API REST
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| ![Retrofit](https://img.shields.io/badge/Retrofit-2.9.0-48B983?style=flat-square&logo=square&logoColor=white) | 2.9.0 | Cliente HTTP para API REST |
+| ![OkHttp](https://img.shields.io/badge/OkHttp-4.12.0-48B983?style=flat-square&logo=square&logoColor=white) | 4.12.0 | Cliente HTTP subyacente + Interceptors |
+| ![Gson](https://img.shields.io/badge/Gson-2.10.1-4285F4?style=flat-square&logo=google&logoColor=white) | 2.10.1 | Serialización JSON ↔ Objetos Kotlin |
+
 ### Procesamiento Asincrónico
 | Componente | Propósito |
 |------------|-----------|
@@ -201,6 +208,72 @@ User Action → Screen → ViewModel → Repository → DAO → Room Database (S
                 ↑                                              │
                 └──────────── StateFlow/Flow ◄────────────────┘
 ```
+
+### Análisis de Arquitectura MVVM
+
+La aplicación implementa correctamente el patrón **MVVM (Model-View-ViewModel)** con separación clara de responsabilidades:
+
+#### Capas de la Arquitectura
+
+| Capa | Responsabilidad | Componentes |
+|------|-----------------|-------------|
+| **View (UI)** | Renderizar UI, capturar eventos | `*Screen.kt`, `*Components.kt` (Jetpack Compose) |
+| **ViewModel** | Estado de UI, lógica de presentación | `*ViewModel.kt` con `StateFlow` |
+| **Model (Data)** | Datos y lógica de negocio | `Repository`, `DAOs`, `Entities`, `Models` |
+
+#### Verificación de Separación de Responsabilidades
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        UI LAYER                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ screens/        components/       navigation/               ││
+│  │ - PetListScreen - Cards.kt        - AppNavGraph.kt          ││
+│  │ - PetDetail...  - Buttons.kt      - NavRoutes.kt            ││
+│  │ - AdminHome...  - InputFields.kt                            ││
+│  │                                                              ││
+│  │ ✅ Solo UI declarativa, sin lógica de negocio               ││
+│  └─────────────────────────────────────────────────────────────┘│
+├─────────────────────────────────────────────────────────────────┤
+│                     VIEWMODEL LAYER                              │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ *ViewModel.kt                                               ││
+│  │ - PetListViewModel     - AdminHomeViewModel                 ││
+│  │ - PetDetailViewModel   - AuthViewModel                      ││
+│  │ - AppointmentViewModel - ActivityLogViewModel               ││
+│  │                                                              ││
+│  │ ✅ StateFlow para estado reactivo                           ││
+│  │ ✅ viewModelScope para coroutines lifecycle-aware           ││
+│  │ ✅ Sin referencias a Context/Activity                       ││
+│  └─────────────────────────────────────────────────────────────┘│
+├─────────────────────────────────────────────────────────────────┤
+│                       DATA LAYER                                 │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ data/                                                       ││
+│  │ ├── model/          # Modelos de dominio (Pet, Owner...)    ││
+│  │ ├── local/          # Room Database, DAOs, Entities         ││
+│  │ ├── remote/         # Retrofit, DTOs, Mappers               ││
+│  │ ├── repository/     # VetCareRepository (singleton)         ││
+│  │ └── session/        # SessionManager                        ││
+│  │                                                              ││
+│  │ ✅ Repository Pattern implementado                          ││
+│  │ ✅ Separación Entity (Room) vs Model (Domain)               ││
+│  │ ✅ DTOs separados para API REST                             ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Estado de la Arquitectura
+
+| Principio MVVM | Estado | Evidencia |
+|----------------|--------|-----------|
+| **Single Source of Truth** | ✅ Implementado | Room Database como fuente única |
+| **Unidirectional Data Flow** | ✅ Implementado | UI → ViewModel → Repository → DB |
+| **Separation of Concerns** | ✅ Implementado | 3 capas claramente separadas |
+| **Testability** | ✅ Preparado | ViewModels sin dependencias de Android |
+| **Lifecycle Awareness** | ✅ Implementado | viewModelScope, StateFlow |
+
+**Conclusión:** La arquitectura MVVM está correctamente implementada y optimizada. No se requieren modificaciones estructurales.
 
 ### Persistencia Local
 
@@ -312,6 +385,17 @@ app/
 │   │   │   │   │
 │   │   │   │   └── mapper/
 │   │   │   │       └── EntityMappers.kt     # Conversión Entity ↔ Model
+│   │   │   │
+│   │   │   ├── remote/                      # 🆕 Capa de Red (Retrofit)
+│   │   │   │   ├── api/
+│   │   │   │   │   └── VetCareApiService.kt # Interfaz Retrofit
+│   │   │   │   ├── dto/
+│   │   │   │   │   └── ApiDtos.kt           # Data Transfer Objects
+│   │   │   │   ├── mapper/
+│   │   │   │   │   └── DtoMappers.kt        # DTO ↔ Domain Mappers
+│   │   │   │   ├── RetrofitClient.kt        # Configuración Retrofit
+│   │   │   │   ├── RemoteDataSource.kt      # API Calls encapsuladas
+│   │   │   │   └── NetworkResult.kt         # Sealed class resultados
 │   │   │   │
 │   │   │   ├── logging/
 │   │   │   │   └── ActivityLogger.kt        # Sistema de auditoría
@@ -750,6 +834,131 @@ La aplicación implementa persistencia local completa utilizando **Room Database
 | **Consultas** | Flow para datos reactivos, suspend para operaciones |
 | **Inicialización** | Datos de demostración precargados |
 
+### 🌐 Integración de Librería Externa: Retrofit
+
+La aplicación integra **Retrofit 2.9.0** como cliente HTTP para comunicación con APIs REST, preparando la arquitectura para futuras integraciones con backend.
+
+#### Justificación Técnica de Retrofit
+
+| Criterio | Retrofit | HttpURLConnection | Ktor | Volley |
+|----------|----------|-------------------|------|--------|
+| **Type Safety** | ✅ Alto (interfaces) | ❌ Manual | ✅ Alto | ⚠️ Medio |
+| **Boilerplate** | ✅ Mínimo | ❌ Extenso | ✅ Mínimo | ⚠️ Medio |
+| **Coroutines** | ✅ Nativo | ❌ Manual | ✅ Nativo | ❌ Callbacks |
+| **Interceptors** | ✅ OkHttp | ❌ Manual | ✅ Plugins | ⚠️ Limitado |
+| **Comunidad** | ✅ Muy amplia | ⚠️ Básica | ⚠️ Creciendo | ⚠️ Legacy |
+| **Documentación** | ✅ Excelente | ⚠️ Básica | ✅ Buena | ⚠️ Desactualizada |
+| **Mantenimiento** | ✅ Square (activo) | ✅ Android | ✅ JetBrains | ⚠️ Google (bajo) |
+
+**Decisión:** Se eligió Retrofit por:
+1. **Estándar de la industria** para Android (>90% de apps en producción)
+2. **Integración nativa con Coroutines** via funciones `suspend`
+3. **OkHttp como base** con interceptors para logging, auth y retry
+4. **Conversión automática JSON ↔ Kotlin** con Gson
+5. **Mantenimiento activo** por Square Inc.
+
+#### Arquitectura de la Capa de Red
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      NETWORK LAYER                               │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────┐  │
+│  │  VetCareApi     │    │  RetrofitClient │    │  OkHttp     │  │
+│  │   Service       │◄───│   (Singleton)   │◄───│  Client     │  │
+│  │  (Interface)    │    │   + Gson        │    │ +Interceptor│  │
+│  └─────────────────┘    └─────────────────┘    └─────────────┘  │
+│           │                                                      │
+│           ▼                                                      │
+│  ┌─────────────────┐    ┌─────────────────┐                     │
+│  │ RemoteDataSource│    │  NetworkResult  │                     │
+│  │  (API Calls)    │───►│ (Success/Error) │                     │
+│  └─────────────────┘    └─────────────────┘                     │
+│           │                                                      │
+│           ▼                                                      │
+│  ┌─────────────────┐    ┌─────────────────┐                     │
+│  │   DTO Mappers   │───►│  Domain Models  │                     │
+│  │ (JSON ↔ Kotlin) │    │  (Pet, Owner..) │                     │
+│  └─────────────────┘    └─────────────────┘                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Estructura de Archivos de Red
+
+```
+data/remote/
+├── api/
+│   └── VetCareApiService.kt    # Interfaz Retrofit con endpoints
+├── dto/
+│   └── ApiDtos.kt              # Data Transfer Objects (JSON)
+├── mapper/
+│   └── DtoMappers.kt           # Conversión DTO ↔ Domain Models
+├── RetrofitClient.kt           # Configuración singleton de Retrofit
+├── RemoteDataSource.kt         # Encapsulación de llamadas API
+└── NetworkResult.kt            # Sealed class para resultados
+```
+
+#### Endpoints Implementados
+
+| Módulo | Endpoints | Métodos HTTP |
+|--------|-----------|--------------|
+| **Auth** | `/api/auth/login`, `/register`, `/reset-password` | POST |
+| **Pets** | `/api/pets`, `/pets/{id}`, `/pets/owner/{id}` | GET, POST, PUT, DELETE |
+| **Appointments** | `/api/appointments`, `/appointments/pet/{id}` | GET, POST, PUT, PATCH |
+| **Veterinarians** | `/api/veterinarians`, `/veterinarians/{id}` | GET |
+| **Consultations** | `/api/consultations/pet/{id}` | GET, POST |
+| **Vaccines** | `/api/vaccines/pet/{id}` | GET, POST |
+| **Owners** | `/api/owners/{id}` | GET, PUT |
+
+#### Características Implementadas
+
+```kotlin
+// RetrofitClient.kt - Configuración centralizada
+object RetrofitClient {
+    private val okHttpClient = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .addInterceptor(loggingInterceptor)  // Logging en debug
+        .addInterceptor { chain ->           // Headers comunes
+            chain.proceed(chain.request().newBuilder()
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .build())
+        }
+        .build()
+}
+```
+
+#### Manejo de Respuestas con NetworkResult
+
+```kotlin
+// NetworkResult.kt - Patrón sealed class
+sealed class NetworkResult<out T> {
+    data class Success<out T>(val data: T) : NetworkResult<T>()
+    data class Error(val message: String, val code: Int?) : NetworkResult<Nothing>()
+    data object Loading : NetworkResult<Nothing>()
+}
+
+// Uso en ViewModel
+when (result) {
+    is NetworkResult.Success -> _uiState.value = result.data
+    is NetworkResult.Error -> _error.value = result.message
+    is NetworkResult.Loading -> _isLoading.value = true
+}
+```
+
+#### Justificación: ¿Por qué NO se usa Glide?
+
+| Aspecto | Decisión | Justificación |
+|---------|----------|---------------|
+| **Sistema actual** | Recursos locales (`R.drawable.*`) | Imágenes embebidas en APK |
+| **Rendimiento** | ✅ Óptimo | Sin latencia de red para cargar imágenes |
+| **Offline** | ✅ Completo | Funciona sin conexión a internet |
+| **Tamaño APK** | ⚠️ Aumenta | Trade-off aceptable para demo/prototipo |
+| **Futuro** | Glide cuando se integre backend | Cuando las imágenes vengan de servidor |
+
+**Conclusión:** Glide se integrará en versión 2.0 cuando la app se conecte a un backend real con URLs de imágenes. Actualmente, el sistema de recursos locales es más eficiente para el caso de uso.
+
 ---
 
 ## 🔄 Flujo de Usuario
@@ -822,6 +1031,15 @@ graph TD
 - [x] Verificación de liberación correcta de ViewModels y Coroutines
 - [x] Confirmación de ausencia de referencias estáticas indebidas
 - [x] Documentación de métricas de memoria y resultados de análisis
+
+### Versión 1.4 ✅ (Integración de Librerías Externas)
+- [x] Integración de Retrofit 2.9.0 para API REST
+- [x] Configuración de OkHttp 4.12.0 con interceptors
+- [x] Serialización JSON con Gson 2.10.1
+- [x] Capa de red completa: DTOs, Mappers, DataSource
+- [x] NetworkResult sealed class para manejo de respuestas
+- [x] Endpoints preparados para 7 módulos (Auth, Pets, Appointments, etc.)
+- [x] Documentación de justificación técnica vs alternativas
 
 ### Versión 2.0 🔜
 - [ ] Integración con backend REST API
