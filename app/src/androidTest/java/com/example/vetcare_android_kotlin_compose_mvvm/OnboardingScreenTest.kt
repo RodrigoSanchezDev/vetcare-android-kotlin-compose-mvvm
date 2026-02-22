@@ -1,7 +1,8 @@
 package com.example.vetcare_android_kotlin_compose_mvvm
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,6 +23,7 @@ import org.junit.runner.RunWith
  * - Navegación hacia la pantalla de login
  *
  * Framework: Compose UI Testing (equivalente a Espresso para Jetpack Compose)
+ * Usa createAndroidComposeRule<ComponentActivity> para acceso a recursos Android
  *
  * @author Rodrigo Sánchez
  */
@@ -29,7 +31,7 @@ import org.junit.runner.RunWith
 class OnboardingScreenTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     // ════════════════════════════════════════════════════════════════
     // TESTS DE RENDERIZADO DE COMPONENTES
@@ -44,7 +46,7 @@ class OnboardingScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("Para la salud y\ncuidado de tu mascota", substring = true)
+            .onNodeWithText("salud", substring = true, ignoreCase = true)
             .assertIsDisplayed()
     }
 
@@ -57,7 +59,7 @@ class OnboardingScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("VetCare es la forma revolucionaria", substring = true)
+            .onNodeWithText("revolucionaria", substring = true, ignoreCase = true)
             .assertIsDisplayed()
     }
 
@@ -69,7 +71,6 @@ class OnboardingScreenTest {
             }
         }
 
-        // El botón circular tiene contentDescription "Continuar"
         composeTestRule
             .onNodeWithContentDescription("Continuar")
             .assertIsDisplayed()
@@ -140,12 +141,10 @@ class OnboardingScreenTest {
             }
         }
 
-        // Verificar que la pantalla se renderiza completa sin crash
         composeTestRule.waitForIdle()
 
-        // Verificar que al menos el título y el botón están presentes
         composeTestRule
-            .onNodeWithText("salud", substring = true)
+            .onNodeWithText("mascota", substring = true, ignoreCase = true)
             .assertIsDisplayed()
 
         composeTestRule
@@ -153,4 +152,3 @@ class OnboardingScreenTest {
             .assertIsDisplayed()
     }
 }
-

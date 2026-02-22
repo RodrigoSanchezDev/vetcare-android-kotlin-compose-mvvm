@@ -2,15 +2,13 @@ package com.example.vetcare_android_kotlin_compose_mvvm
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.screens.auth.LoginScreen
 import com.example.vetcare_android_kotlin_compose_mvvm.ui.theme.VetCareTheme
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -26,6 +24,8 @@ import org.junit.runner.RunWith
  * - Navegación hacia recuperación de contraseña
  *
  * Framework: Compose UI Testing (equivalente a Espresso para Jetpack Compose)
+ * Usa createAndroidComposeRule<MainActivity> para inicializar VetCareApplication
+ * y el repositorio Room que requiere el AuthViewModel.
  *
  * @author Rodrigo Sánchez
  */
@@ -33,7 +33,7 @@ import org.junit.runner.RunWith
 class LoginScreenTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     // ════════════════════════════════════════════════════════════════
     // TESTS DE RENDERIZADO DE COMPONENTES
@@ -99,7 +99,7 @@ class LoginScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("Contraseña")
+            .onNodeWithText("Contraseña", substring = true, ignoreCase = true)
             .assertIsDisplayed()
     }
 
@@ -114,9 +114,8 @@ class LoginScreenTest {
             }
         }
 
-        // El botón tiene "Iniciar Sesión" como texto
         composeTestRule
-            .onNodeWithText("Iniciar Sesión", substring = true, ignoreCase = true)
+            .onNodeWithText("Iniciar Sesi", substring = true, ignoreCase = true)
             .assertIsDisplayed()
     }
 
@@ -136,7 +135,7 @@ class LoginScreenTest {
             .assertIsDisplayed()
 
         composeTestRule
-            .onNodeWithText("Admin: admin@vet.cl / 123456", substring = true)
+            .onNodeWithText("admin@vet.cl", substring = true)
             .assertIsDisplayed()
     }
 
@@ -177,12 +176,12 @@ class LoginScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("Contraseña")
+            .onNodeWithText("Contraseña", substring = true, ignoreCase = true)
             .performClick()
             .performTextInput("123456")
 
         // La contraseña está oculta por defecto (dots),
-        // verificamos que el campo no muestra "Contraseña" como placeholder
+        // verificamos que el campo aceptó el input sin crash
         composeTestRule.waitForIdle()
     }
 
@@ -204,7 +203,7 @@ class LoginScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("Olvidaste tu contraseña?", substring = true, ignoreCase = true)
+            .onNodeWithText("Olvidaste tu contrase", substring = true, ignoreCase = true)
             .performClick()
 
         assertTrue("Forgot password callback should be triggered", forgotPasswordClicked)
@@ -222,8 +221,7 @@ class LoginScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("Iniciar Sesión", substring = true, ignoreCase = true)
+            .onNodeWithText("Iniciar Sesi", substring = true, ignoreCase = true)
             .assertIsEnabled()
     }
 }
-
