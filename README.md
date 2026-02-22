@@ -35,6 +35,7 @@
 - [Módulos del Sistema](#-módulos-del-sistema)
 - [Debug & Profiling](#-debug--profiling)
 - [Análisis de Memoria](#análisis-de-memoria-y-detección-de-memory-leaks)
+- [Testing](#-testing)
 - [Accesibilidad y Temas](#-accesibilidad)
 - [Flujo de Usuario](#-flujo-de-usuario)
 - [Roadmap](#-roadmap)
@@ -107,6 +108,8 @@
 ✅ Carga paralela de datos con async/await
 ✅ Dispatchers optimizados (IO, Default, Main)
 ✅ Pull-to-refresh sin bloqueo de UI
+✅ Pruebas unitarias con JUnit y MockK (90+ tests)
+✅ Pruebas funcionales instrumentadas con Compose UI Testing
 ```
 
 ---
@@ -163,6 +166,11 @@
 ### Testing & Profiling
 | Tecnología | Versión | Propósito |
 |------------|---------|-----------|
+| ![JUnit](https://img.shields.io/badge/JUnit-4.13.2-25A162?style=flat-square&logo=junit5&logoColor=white) | 4.13.2 | Framework de pruebas unitarias |
+| ![MockK](https://img.shields.io/badge/MockK-1.13.8-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | 1.13.8 | Mocking para Kotlin |
+| ![Compose Testing](https://img.shields.io/badge/Compose%20Testing-BOM%202024.09-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white) | BOM 2024.09 | Pruebas funcionales de UI |
+| ![Espresso](https://img.shields.io/badge/Espresso-3.5.1-4285F4?style=flat-square&logo=android&logoColor=white) | 3.5.1 | Framework de pruebas instrumentadas |
+| Coroutines Test | 1.7.3 | Testing de operaciones asincrónicas |
 | ![LeakCanary](https://img.shields.io/badge/LeakCanary-FFDC00?style=flat-square&logo=android&logoColor=black) | 2.14 | Detección de memory leaks |
 | Android Profiler | - | Análisis de heap y memoria |
 
@@ -783,6 +791,76 @@ debugImplementation(libs.leakcanary.android)
 > La arquitectura **MVVM** implementada con **Jetpack Compose**, **StateFlow** y **viewModelScope** proporciona un manejo de ciclo de vida robusto que previene las fugas de memoria comunes en aplicaciones Android. Los componentes se liberan correctamente cuando salen del scope de composición o cuando las Activities/Fragments son destruidos.
 >
 > **Estado: ✅ Gestión de memoria óptima - Sin anomalías detectadas**
+
+---
+
+### 🧪 Testing
+
+La aplicación implementa una suite de pruebas exhaustiva que abarca tanto **pruebas unitarias** (JUnit + MockK) como **pruebas funcionales instrumentadas** (Compose UI Testing / Espresso), garantizando la calidad y confiabilidad del sistema.
+
+#### Pruebas Unitarias (JUnit)
+
+Se desarrollaron **4 clases de prueba** enfocadas en la validación de lógica de negocio, transformaciones de datos e integridad del modelo de dominio:
+
+| Clase de Prueba | Tests | Propósito |
+|-----------------|:-----:|-----------|
+| `EntityMappersTest` | 18 | Transformaciones bidireccionales Entity↔Model (User, Pet, Appointment, VaccineRecord, Owner) |
+| `SessionManagerTest` | 17 | Lógica de autenticación: login, logout, roles (Admin/Owner), estado de sesión |
+| `ConvertersTest` | 24 | TypeConverters de Room: LocalDateTime, LocalDate, Enums (UserRole, PetSpecies, AppointmentStatus) |
+| `ModelValidationTest` | 31 | Reglas de negocio, invariantes de datos, filtrado, ordenamiento y validaciones de formulario |
+
+**Ejecución:**
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+**Aspectos de lógica de negocio testeados:**
+- ✅ Integridad referencial en mappers (roundtrip Entity→Model→Entity)
+- ✅ Serialización/deserialización de tipos complejos (ISO 8601)
+- ✅ Gestión de estado de sesión (StateFlow reactivo)
+- ✅ Validación de formularios (email, contraseña, edad de mascotas)
+- ✅ Filtrado de mascotas por especie, dueño y búsqueda case-insensitive
+- ✅ Ordenamiento de listas por nombre y edad
+- ✅ Filtrado de citas por estado
+- ✅ Manejo de valores nulos en campos opcionales
+- ✅ Edge cases: strings inválidas, listas vacías, múltiples logouts
+
+#### Pruebas Funcionales Instrumentadas (Compose UI Testing)
+
+Se implementaron **2 clases de prueba instrumentada** que simulan interacciones reales del usuario:
+
+| Clase de Prueba | Tests | Pantalla Testeada |
+|-----------------|:-----:|-------------------|
+| `LoginScreenTest` | 8 | Pantalla de Login — Renderizado, ingreso de datos, navegación |
+| `OnboardingScreenTest` | 7 | Pantalla de Onboarding — Renderizado, botón continuar, navegación |
+
+**Ejecución (requiere emulador o dispositivo):**
+```bash
+./gradlew :app:connectedDebugAndroidTest
+```
+
+**Interacciones de usuario verificadas:**
+- ✅ Renderizado correcto de componentes UI (logo, subtítulo, campos, botones)
+- ✅ Ingreso de datos en campos de email y contraseña
+- ✅ Callback de navegación "Olvidaste tu contraseña"
+- ✅ Botón de login habilitado e interactuable
+- ✅ Visualización de credenciales de prueba
+- ✅ Navegación desde onboarding hacia login (callback "Continuar")
+- ✅ Renderizado de imágenes y contenido multimedia
+- ✅ Estabilidad de la UI sin crashes
+
+#### Stack de Testing
+
+| Dependencia | Tipo | Propósito |
+|-------------|------|-----------|
+| JUnit 4.13.2 | `testImplementation` | Framework de pruebas unitarias |
+| MockK 1.13.8 | `testImplementation` | Mocking de clases Kotlin |
+| Coroutines Test 1.7.3 | `testImplementation` | Testing de operaciones async |
+| Arch Core Testing 2.2.0 | `testImplementation` | Testing de LiveData/ViewModel |
+| Compose UI Test JUnit4 | `androidTestImplementation` | Framework de pruebas de UI Compose |
+| Espresso Core 3.5.1 | `androidTestImplementation` | Interacciones de UI instrumentadas |
+| Navigation Testing 2.7.7 | `androidTestImplementation` | Testing de navegación |
+| Room Testing 2.7.0 | `androidTestImplementation` | Testing de base de datos |
 
 ### 💾 Base de Datos Local (Room)
 

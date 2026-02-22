@@ -1,6 +1,6 @@
 [versions]
-agp = "9.0.0"
-kotlin = "2.0.21"
+agp = "9.0.1"
+kotlin = "2.2.10"
 coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -15,13 +15,18 @@ coroutines = "1.7.3"
 materialIconsExtended = "1.6.1"
 # Room Database
 room = "2.7.0"
-ksp = "2.0.21-1.0.28"
+ksp = "2.3.2"
 # LeakCanary - Detección de Memory Leaks
 leakcanary = "2.14"
 # Retrofit - Cliente HTTP para API REST
 retrofit = "2.9.0"
 okhttp = "4.12.0"
 gson = "2.10.1"
+# Testing
+mockk = "1.13.8"
+coroutinesTest = "1.7.3"
+archCoreTesting = "2.2.0"
+navigationTesting = "2.7.7"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -55,6 +60,13 @@ retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+# Testing - MockK y Coroutines Test
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+arch-core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "archCoreTesting" }
+androidx-navigation-testing = { group = "androidx.navigation", name = "navigation-testing", version.ref = "navigationTesting" }
+androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
