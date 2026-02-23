@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.vetcare_android_kotlin_compose_mvvm"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.vetcare_android_kotlin_compose_mvvm"
@@ -17,6 +17,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    testOptions {
+        animationsDisabled = true
     }
 
     buildTypes {

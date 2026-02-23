@@ -832,7 +832,7 @@ Se implementaron **2 clases de prueba instrumentada** que simulan interacciones 
 | Clase de Prueba | Tests | Pantalla Testeada |
 |-----------------|:-----:|-------------------|
 | `LoginScreenTest` | 8 | Pantalla de Login — Renderizado, ingreso de datos, navegación |
-| `OnboardingScreenTest` | 7 | Pantalla de Onboarding — Renderizado, botón continuar, navegación |
+| `PetFormValidationTest` | 5 | Formulario de Mascotas — Campos, chips de especie, navegación |
 
 **Ejecución (requiere emulador o dispositivo):**
 ```bash
@@ -845,8 +845,11 @@ Se implementaron **2 clases de prueba instrumentada** que simulan interacciones 
 - ✅ Callback de navegación "Olvidaste tu contraseña"
 - ✅ Botón de login habilitado e interactuable
 - ✅ Visualización de credenciales de prueba
-- ✅ Navegación desde onboarding hacia login (callback "Continuar")
-- ✅ Renderizado de imágenes y contenido multimedia
+- ✅ Flujo completo: Onboarding → Login → Dashboard → Mascotas → Formulario
+- ✅ Visualización de campos del formulario de mascotas (nombre, especie, raza, edad)
+- ✅ Selección de especie mediante chips (Perro, Gato, Ave, Conejo)
+- ✅ Ingreso de texto en el campo nombre del formulario
+- ✅ Navegación de vuelta desde el formulario a la lista de mascotas
 - ✅ Estabilidad de la UI sin crashes
 
 #### Stack de Testing

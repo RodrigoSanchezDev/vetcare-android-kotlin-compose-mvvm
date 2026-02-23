@@ -9,14 +9,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.vetcare_android_kotlin_compose_mvvm.R
 import com.example.vetcare_android_kotlin_compose_mvvm.data.local.dao.*
 import com.example.vetcare_android_kotlin_compose_mvvm.data.local.entity.*
-import com.example.vetcare_android_kotlin_compose_mvvm.data.model.AppointmentStatus
-import com.example.vetcare_android_kotlin_compose_mvvm.data.model.PetSpecies
-import com.example.vetcare_android_kotlin_compose_mvvm.data.model.UserRole
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * VetCare Room Database
@@ -74,6 +69,7 @@ abstract class VetCareDatabase : RoomDatabase() {
                     VetCareDatabase::class.java,
                     "vetcare_database"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(VetCareDatabaseCallback(context))
                     .build()
                 INSTANCE = instance
@@ -83,248 +79,155 @@ abstract class VetCareDatabase : RoomDatabase() {
     }
 
     /**
-     * Callback para poblar la base de datos con datos iniciales de demostración
+     * Callback para poblar la base de datos con datos iniciales de demostración.
+     *
+     * Usa db.execSQL() directamente en lugar de los DAOs de Room para evitar
+     * un deadlock: el callback onCreate se ejecuta dentro de una transacción
+     * de Room, y usar DAOs (que requieren su propia conexión) desde runBlocking
+     * provoca que se bloqueen mutuamente. Con execSQL las inserts corren de
+     * forma síncrona dentro de la misma transacción de creación.
      */
     private class VetCareDatabaseCallback(
         private val context: Context
     ) : RoomDatabase.Callback() {
 
+        private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+        private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
-            INSTANCE?.let { database ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    populateDatabase(database)
-                }
-            }
+            populateDatabase(db)
         }
 
-        /**
-         * Inserta datos de demostración en la base de datos
-         * Estos datos se mantienen persistidos incluso al cerrar la app
-         */
-        private suspend fun populateDatabase(database: VetCareDatabase) {
+        private fun populateDatabase(db: SupportSQLiteDatabase) {
             // ============================================
             // USUARIOS
             // ============================================
-            val users = listOf(
-                UserEntity(
-                    id = "user-admin-001",
-                    name = "Administrador VetCare",
-                    email = "admin@vet.cl",
-                    passwordHash = "123456",
-                    role = UserRole.ADMIN,
-                    ownerId = null
-                ),
-                UserEntity(
-                    id = "user-owner-001",
-                    name = "María González",
-                    email = "owner@vet.cl",
-                    passwordHash = "123456",
-                    role = UserRole.OWNER,
-                    ownerId = "owner-001"
-                )
+            db.execSQL(
+                """INSERT INTO users (id, name, email, passwordHash, role, ownerId)
+                   VALUES ('user-admin-001', 'Administrador VetCare', 'admin@vet.cl', '123456', 'ADMIN', NULL)"""
             )
-            database.userDao().insertAllUsers(users)
+            db.execSQL(
+                """INSERT INTO users (id, name, email, passwordHash, role, ownerId)
+                   VALUES ('user-owner-001', 'María González', 'owner@vet.cl', '123456', 'OWNER', 'owner-001')"""
+            )
 
             // ============================================
             // DUEÑOS DE MASCOTAS
             // ============================================
-            val owners = listOf(
-                OwnerEntity(
-                    id = "owner-001",
-                    fullName = "María González",
-                    email = "owner@vet.cl",
-                    phone = "+56 9 1234 5678",
-                    address = "Av. Principal 123, Santiago"
-                ),
-                OwnerEntity(
-                    id = "owner-002",
-                    fullName = "Carlos Rodríguez",
-                    email = "carlos@email.cl",
-                    phone = "+56 9 8765 4321",
-                    address = "Calle Los Aromos 456, Providencia"
-                )
+            db.execSQL(
+                """INSERT INTO owners (id, fullName, email, phone, address)
+                   VALUES ('owner-001', 'María González', 'owner@vet.cl', '+56 9 1234 5678', 'Av. Principal 123, Santiago')"""
             )
-            database.ownerDao().insertAllOwners(owners)
+            db.execSQL(
+                """INSERT INTO owners (id, fullName, email, phone, address)
+                   VALUES ('owner-002', 'Carlos Rodríguez', 'carlos@email.cl', '+56 9 8765 4321', 'Calle Los Aromos 456, Providencia')"""
+            )
 
             // ============================================
             // VETERINARIOS
             // ============================================
-            val veterinarians = listOf(
-                VeterinarianEntity(
-                    id = "vet-001",
-                    name = "Dr. Pedro Sánchez",
-                    specialty = "Medicina General",
-                    phone = "+56 9 1111 2222",
-                    avatarRes = R.drawable.vet_pedro_gonzalez
-                ),
-                VeterinarianEntity(
-                    id = "vet-002",
-                    name = "Dra. Ana Martínez",
-                    specialty = "Cirugía",
-                    phone = "+56 9 3333 4444",
-                    avatarRes = R.drawable.vet_maria_rodriguez
-                ),
-                VeterinarianEntity(
-                    id = "vet-003",
-                    name = "Dr. Luis Torres",
-                    specialty = "Dermatología",
-                    phone = "+56 9 5555 6666",
-                    avatarRes = R.drawable.vet_carlos_martinez
-                )
+            db.execSQL(
+                """INSERT INTO veterinarians (id, name, specialty, phone, avatarRes)
+                   VALUES ('vet-001', 'Dr. Pedro Sánchez', 'Medicina General', '+56 9 1111 2222', ${R.drawable.vet_pedro_gonzalez})"""
             )
-            database.veterinarianDao().insertAllVeterinarians(veterinarians)
+            db.execSQL(
+                """INSERT INTO veterinarians (id, name, specialty, phone, avatarRes)
+                   VALUES ('vet-002', 'Dra. Ana Martínez', 'Cirugía', '+56 9 3333 4444', ${R.drawable.vet_maria_rodriguez})"""
+            )
+            db.execSQL(
+                """INSERT INTO veterinarians (id, name, specialty, phone, avatarRes)
+                   VALUES ('vet-003', 'Dr. Luis Torres', 'Dermatología', '+56 9 5555 6666', ${R.drawable.vet_carlos_martinez})"""
+            )
 
             // ============================================
             // MASCOTAS
             // ============================================
-            val pets = listOf(
-                PetEntity(
-                    id = "pet-001",
-                    ownerId = "owner-001",
-                    name = "Max",
-                    species = PetSpecies.DOG,
-                    breed = "West Highland Terrier",
-                    ageYears = 3,
-                    weightKg = 8.5,
-                    photoRes = R.drawable.pet_max,
-                    notes = "Muy activo, le gusta pasear"
-                ),
-                PetEntity(
-                    id = "pet-002",
-                    ownerId = "owner-001",
-                    name = "Luna",
-                    species = PetSpecies.CAT,
-                    breed = "Gato Naranja",
-                    ageYears = 2,
-                    weightKg = 4.2,
-                    photoRes = R.drawable.pet_luna,
-                    notes = "Tranquila, le gusta dormir al sol"
-                ),
-                PetEntity(
-                    id = "pet-003",
-                    ownerId = "owner-002",
-                    name = "Rocky",
-                    species = PetSpecies.DOG,
-                    breed = "Golden Retriever",
-                    ageYears = 5,
-                    weightKg = 32.0,
-                    photoRes = R.drawable.pet_rocky,
-                    notes = "Muy amigable con otros perros"
-                ),
-                PetEntity(
-                    id = "pet-004",
-                    ownerId = "owner-001",
-                    name = "Michi",
-                    species = PetSpecies.CAT,
-                    breed = "Gato Mestizo",
-                    ageYears = 4,
-                    weightKg = 5.0,
-                    photoRes = R.drawable.pet_michi,
-                    notes = "Muy cariñoso"
-                )
+            db.execSQL(
+                """INSERT INTO pets (id, ownerId, name, species, breed, ageYears, weightKg, photoRes, notes)
+                   VALUES ('pet-001', 'owner-001', 'Max', 'DOG', 'West Highland Terrier', 3, 8.5, ${R.drawable.pet_max}, 'Muy activo, le gusta pasear')"""
             )
-            database.petDao().insertAllPets(pets)
+            db.execSQL(
+                """INSERT INTO pets (id, ownerId, name, species, breed, ageYears, weightKg, photoRes, notes)
+                   VALUES ('pet-002', 'owner-001', 'Luna', 'CAT', 'Gato Naranja', 2, 4.2, ${R.drawable.pet_luna}, 'Tranquila, le gusta dormir al sol')"""
+            )
+            db.execSQL(
+                """INSERT INTO pets (id, ownerId, name, species, breed, ageYears, weightKg, photoRes, notes)
+                   VALUES ('pet-003', 'owner-002', 'Rocky', 'DOG', 'Golden Retriever', 5, 32.0, ${R.drawable.pet_rocky}, 'Muy amigable con otros perros')"""
+            )
+            db.execSQL(
+                """INSERT INTO pets (id, ownerId, name, species, breed, ageYears, weightKg, photoRes, notes)
+                   VALUES ('pet-004', 'owner-001', 'Michi', 'CAT', 'Gato Mestizo', 4, 5.0, ${R.drawable.pet_michi}, 'Muy cariñoso')"""
+            )
 
             // ============================================
             // CONSULTAS MÉDICAS
             // ============================================
-            val consultations = listOf(
-                ConsultationEntity(
-                    id = "cons-001",
-                    petId = "pet-001",
-                    vetId = "vet-001",
-                    dateTime = LocalDateTime.now().minusDays(30),
-                    diagnosis = "Control de rutina - mascota saludable",
-                    treatment = "Vitaminas preventivas por 15 días",
-                    notes = "Próximo control en 6 meses"
-                ),
-                ConsultationEntity(
-                    id = "cons-002",
-                    petId = "pet-001",
-                    vetId = "vet-003",
-                    dateTime = LocalDateTime.now().minusDays(15),
-                    diagnosis = "Dermatitis leve en zona abdominal",
-                    treatment = "Shampoo medicado + crema tópica",
-                    notes = "Evolución favorable"
-                ),
-                ConsultationEntity(
-                    id = "cons-003",
-                    petId = "pet-002",
-                    vetId = "vet-001",
-                    dateTime = LocalDateTime.now().minusDays(60),
-                    diagnosis = "Vacunación anual completada",
-                    treatment = "Triple felina aplicada",
-                    notes = "Sin reacciones adversas"
-                )
+            val cons1DateTime = LocalDateTime.now().minusDays(30).format(dateTimeFormatter)
+            val cons2DateTime = LocalDateTime.now().minusDays(15).format(dateTimeFormatter)
+            val cons3DateTime = LocalDateTime.now().minusDays(60).format(dateTimeFormatter)
+
+            db.execSQL(
+                """INSERT INTO consultations (id, petId, vetId, dateTime, diagnosis, treatment, notes)
+                   VALUES ('cons-001', 'pet-001', 'vet-001', '$cons1DateTime', 'Control de rutina - mascota saludable', 'Vitaminas preventivas por 15 días', 'Próximo control en 6 meses')"""
             )
-            database.consultationDao().insertAllConsultations(consultations)
+            db.execSQL(
+                """INSERT INTO consultations (id, petId, vetId, dateTime, diagnosis, treatment, notes)
+                   VALUES ('cons-002', 'pet-001', 'vet-003', '$cons2DateTime', 'Dermatitis leve en zona abdominal', 'Shampoo medicado + crema tópica', 'Evolución favorable')"""
+            )
+            db.execSQL(
+                """INSERT INTO consultations (id, petId, vetId, dateTime, diagnosis, treatment, notes)
+                   VALUES ('cons-003', 'pet-002', 'vet-001', '$cons3DateTime', 'Vacunación anual completada', 'Triple felina aplicada', 'Sin reacciones adversas')"""
+            )
 
             // ============================================
             // CITAS PROGRAMADAS
             // ============================================
-            val appointments = listOf(
-                AppointmentEntity(
-                    id = "apt-001",
-                    petId = "pet-001",
-                    vetId = "vet-001",
-                    dateTime = LocalDateTime.now().plusDays(2).withHour(10).withMinute(0),
-                    reason = "Control post-tratamiento dermatológico",
-                    status = AppointmentStatus.CONFIRMED
-                ),
-                AppointmentEntity(
-                    id = "apt-002",
-                    petId = "pet-002",
-                    vetId = "vet-002",
-                    dateTime = LocalDateTime.now().plusDays(7).withHour(15).withMinute(30),
-                    reason = "Esterilización programada",
-                    status = AppointmentStatus.SCHEDULED
-                ),
-                AppointmentEntity(
-                    id = "apt-003",
-                    petId = "pet-003",
-                    vetId = "vet-001",
-                    dateTime = LocalDateTime.now().plusDays(1).withHour(11).withMinute(0),
-                    reason = "Vacunación anual",
-                    status = AppointmentStatus.CONFIRMED
-                )
+            val apt1DateTime = LocalDateTime.now().plusDays(2).withHour(10).withMinute(0).format(dateTimeFormatter)
+            val apt2DateTime = LocalDateTime.now().plusDays(7).withHour(15).withMinute(30).format(dateTimeFormatter)
+            val apt3DateTime = LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).format(dateTimeFormatter)
+
+            db.execSQL(
+                """INSERT INTO appointments (id, petId, vetId, dateTime, reason, status)
+                   VALUES ('apt-001', 'pet-001', 'vet-001', '$apt1DateTime', 'Control post-tratamiento dermatológico', 'CONFIRMED')"""
             )
-            database.appointmentDao().insertAllAppointments(appointments)
+            db.execSQL(
+                """INSERT INTO appointments (id, petId, vetId, dateTime, reason, status)
+                   VALUES ('apt-002', 'pet-002', 'vet-002', '$apt2DateTime', 'Esterilización programada', 'SCHEDULED')"""
+            )
+            db.execSQL(
+                """INSERT INTO appointments (id, petId, vetId, dateTime, reason, status)
+                   VALUES ('apt-003', 'pet-003', 'vet-001', '$apt3DateTime', 'Vacunación anual', 'CONFIRMED')"""
+            )
 
             // ============================================
             // REGISTROS DE VACUNAS
             // ============================================
-            val vaccineRecords = listOf(
-                VaccineRecordEntity(
-                    id = "vac-001",
-                    petId = "pet-001",
-                    vaccineName = "Antirrábica",
-                    lastDate = LocalDate.now().minusMonths(6),
-                    nextDueDate = LocalDate.now().plusMonths(6)
-                ),
-                VaccineRecordEntity(
-                    id = "vac-002",
-                    petId = "pet-001",
-                    vaccineName = "Séxtuple",
-                    lastDate = LocalDate.now().minusMonths(10),
-                    nextDueDate = LocalDate.now().plusDays(5)
-                ),
-                VaccineRecordEntity(
-                    id = "vac-003",
-                    petId = "pet-002",
-                    vaccineName = "Triple Felina",
-                    lastDate = LocalDate.now().minusMonths(2),
-                    nextDueDate = LocalDate.now().plusMonths(10)
-                ),
-                VaccineRecordEntity(
-                    id = "vac-004",
-                    petId = "pet-002",
-                    vaccineName = "Antirrábica",
-                    lastDate = LocalDate.now().minusMonths(11),
-                    nextDueDate = LocalDate.now().plusDays(3)
-                )
+            val vac1Last = LocalDate.now().minusMonths(6).format(dateFormatter)
+            val vac1Next = LocalDate.now().plusMonths(6).format(dateFormatter)
+            val vac2Last = LocalDate.now().minusMonths(10).format(dateFormatter)
+            val vac2Next = LocalDate.now().plusDays(5).format(dateFormatter)
+            val vac3Last = LocalDate.now().minusMonths(2).format(dateFormatter)
+            val vac3Next = LocalDate.now().plusMonths(10).format(dateFormatter)
+            val vac4Last = LocalDate.now().minusMonths(11).format(dateFormatter)
+            val vac4Next = LocalDate.now().plusDays(3).format(dateFormatter)
+
+            db.execSQL(
+                """INSERT INTO vaccine_records (id, petId, vaccineName, lastDate, nextDueDate)
+                   VALUES ('vac-001', 'pet-001', 'Antirrábica', '$vac1Last', '$vac1Next')"""
             )
-            database.vaccineRecordDao().insertAllVaccineRecords(vaccineRecords)
+            db.execSQL(
+                """INSERT INTO vaccine_records (id, petId, vaccineName, lastDate, nextDueDate)
+                   VALUES ('vac-002', 'pet-001', 'Séxtuple', '$vac2Last', '$vac2Next')"""
+            )
+            db.execSQL(
+                """INSERT INTO vaccine_records (id, petId, vaccineName, lastDate, nextDueDate)
+                   VALUES ('vac-003', 'pet-002', 'Triple Felina', '$vac3Last', '$vac3Next')"""
+            )
+            db.execSQL(
+                """INSERT INTO vaccine_records (id, petId, vaccineName, lastDate, nextDueDate)
+                   VALUES ('vac-004', 'pet-002', 'Antirrábica', '$vac4Last', '$vac4Next')"""
+            )
         }
     }
 }

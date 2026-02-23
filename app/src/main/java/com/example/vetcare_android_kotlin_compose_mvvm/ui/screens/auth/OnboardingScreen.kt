@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -159,7 +160,8 @@ fun OnboardingScreen(
             Surface(
                 modifier = Modifier
                     .size(72.dp)
-                    .scale(scale),
+                    .scale(scale)
+                    .testTag("onboarding_continue_button"),
                 shape = CircleShape,
                 color = VetCareColors.Accent,
                 shadowElevation = 8.dp,

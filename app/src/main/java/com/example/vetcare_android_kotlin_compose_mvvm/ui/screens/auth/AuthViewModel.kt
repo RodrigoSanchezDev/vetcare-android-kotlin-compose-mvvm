@@ -114,23 +114,27 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             _loginState.value = AuthUiState.Loading
 
-            // Simular delay de red
-            delay(1000)
+            try {
+                // Simular delay de red
+                delay(1000)
 
-            // Buscar usuario en Room Database
-            val user = repository.authenticateUser(_email.value, _password.value)
+                // Buscar usuario en Room Database
+                val user = repository.authenticateUser(_email.value, _password.value)
 
-            if (user != null) {
-                SessionManager.login(user)
-                // Log de login exitoso
-                ActivityLogger.log(
-                    screen = ActivityLogger.Screens.LOGIN,
-                    action = ActivityLogger.Actions.LOGIN,
-                    metadata = mapOf("role" to user.role.name)
-                )
-                _loginState.value = AuthUiState.Success(user)
-            } else {
-                _loginState.value = AuthUiState.Error("Credenciales inválidas")
+                if (user != null) {
+                    SessionManager.login(user)
+                    // Log de login exitoso
+                    ActivityLogger.log(
+                        screen = ActivityLogger.Screens.LOGIN,
+                        action = ActivityLogger.Actions.LOGIN,
+                        metadata = mapOf("role" to user.role.name)
+                    )
+                    _loginState.value = AuthUiState.Success(user)
+                } else {
+                    _loginState.value = AuthUiState.Error("Credenciales inválidas")
+                }
+            } catch (e: Exception) {
+                _loginState.value = AuthUiState.Error("Error al iniciar sesión: ${e.message}")
             }
         }
     }
