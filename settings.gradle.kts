@@ -21,3 +21,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "vetcare-android-kotlin-compose-mvvm"
 include(":app")
+
+// Redirigir build fuera de iCloud Drive para evitar duplicados con espacios
+gradle.beforeProject {
+    val iCloudBuildDir = file("/tmp/vetcare-build")
+    layout.buildDirectory.set(iCloudBuildDir.resolve(name))
+}
+

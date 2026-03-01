@@ -36,6 +36,7 @@
 - [Debug & Profiling](#-debug--profiling)
 - [Análisis de Memoria](#análisis-de-memoria-y-detección-de-memory-leaks)
 - [Testing](#-testing)
+- [APK Firmado](#-apk-firmado-release)
 - [Accesibilidad y Temas](#-accesibilidad)
 - [Flujo de Usuario](#-flujo-de-usuario)
 - [Roadmap](#-roadmap)
@@ -110,6 +111,8 @@
 ✅ Pull-to-refresh sin bloqueo de UI
 ✅ Pruebas unitarias con JUnit y MockK (90+ tests)
 ✅ Pruebas funcionales instrumentadas con Compose UI Testing
+✅ APK firmado (release) listo para distribución
+✅ Ícono personalizado de Play Store (ic_launcher-playstore.png)
 ```
 
 ---
@@ -865,6 +868,33 @@ Se implementaron **2 clases de prueba instrumentada** que simulan interacciones 
 | Navigation Testing 2.7.7 | `androidTestImplementation` | Testing de navegación |
 | Room Testing 2.7.0 | `androidTestImplementation` | Testing de base de datos |
 
+### 📦 APK Firmado (Release)
+
+La aplicación cuenta con un **APK firmado** listo para distribución, generado con keystore dedicado.
+
+| Parámetro | Valor |
+|-----------|-------|
+| **Nombre de la app** | VetCare |
+| **Application ID** | `com.example.vetcare_android_kotlin_compose_mvvm` |
+| **Version Code** | 3 |
+| **Version Name** | 1.3 |
+| **Min SDK** | API 26 (Android 8.0) |
+| **Target SDK** | API 35 (Android 15) |
+| **Compile SDK** | API 36 |
+| **Ícono** | Ícono personalizado (`ic_launcher-playstore.png`) |
+| **Signing** | Keystore dedicado con configuración en `signingConfigs` |
+| **ProGuard** | Configurado (`proguard-rules.pro`) |
+
+**Generación del APK:**
+```bash
+./gradlew assembleRelease
+```
+
+El APK firmado se encuentra en:
+```
+app/build/outputs/apk/release/app-release.apk
+```
+
 ### 💾 Base de Datos Local (Room)
 
 La aplicación implementa persistencia local completa utilizando **Room Database**, permitiendo operaciones sin conexión a internet.
@@ -1121,6 +1151,15 @@ graph TD
 - [x] NetworkResult sealed class para manejo de respuestas
 - [x] Endpoints preparados para 7 módulos (Auth, Pets, Appointments, etc.)
 - [x] Documentación de justificación técnica vs alternativas
+
+### Versión 1.5 ✅ (Release & Distribución)
+- [x] Generación de APK firmado (release) con keystore dedicado
+- [x] Configuración de `signingConfigs` en build.gradle.kts
+- [x] Actualización de versión: `versionCode = 3`, `versionName = "1.3"`
+- [x] Creación de ícono personalizado para Play Store (`ic_launcher-playstore.png`)
+- [x] Configuración de nombre de app, permisos y metadatos de distribución
+- [x] Redirección del build directory fuera de iCloud Drive para estabilidad de compilación
+- [x] ProGuard rules configuradas para release
 
 ### Versión 2.0 🔜
 - [ ] Integración con backend REST API
